@@ -1,0 +1,83 @@
+it-equipment-manager/
+├── index.php (redirects to login)
+├── login.php
+├── logout.php
+├── config/
+│   ├── database.php
+│   ├── config.php
+│   └── session.php
+├── includes/
+│   ├── functions.php
+│   ├── security.php
+│   └── validation.php
+├── layouts/
+│   ├── header.php
+│   ├── footer.php
+│   └── sidebar.php
+├── pages/
+│   ├── dashboard_admin.php
+│   ├── dashboard_user.php
+│   ├── users/
+│   │   ├── list_users.php
+│   │   ├── view_user.php
+│   │   ├── add_user.php
+│   │   ├── edit_user.php
+│   │   ├── delete_user.php
+│   │   ├── reset_password.php
+│   │   └── profile.php
+│   ├── equipment/
+│   │   ├── list_equipment.php
+│   │   ├── view_equipment.php
+│   │   ├── add_equipment.php
+│   │   ├── edit_equipment.php
+│   │   └── delete_equipment.php
+│   ├── network/
+│   │   ├── list_network_info.php
+│   │   ├── view_network_info.php
+│   │   ├── add_network_info.php
+│   │   ├── edit_network_info.php
+│   │   ├── delete_network_info.php
+│   │   ├── assign_network_info.php
+│   │   └── unassign_network_info.php
+│   ├── todos/
+│   │   ├── list_todos.php
+│   │   ├── view_todo.php
+│   │   ├── add_todo.php
+│   │   ├── edit_todo.php
+│   │   └── delete_todo.php
+│   ├── notifications/
+│   │   └── list_notifications.php
+│   └── tools/
+│       ├── optimize_database.php
+│       ├── backup_database.php
+│       ├── system_logs.php
+│       ├── cache_cleanup.php
+│       ├── database_repair.php
+│       └── system_settings.php
+├── ajax/
+│   ├── login_handler.php
+│   ├── user_operations.php
+│   ├── equipment_operations.php
+│   ├── network_operations.php
+│   ├── todo_operations.php
+│   ├── notification_operations.php
+│   └── load_dynamic_fields.php
+├── assets/
+│   ├── css/
+│   │   ├── bootstrap.min.css
+│   │   ├── bootstrap-icons.css
+│   │   └── custom.css
+│   ├── js/
+│   │   ├── bootstrap.bundle.min.js
+│   │   ├── jquery-3.6.0.min.js
+│   │   └── custom.js
+│   └── fonts/
+│       └── google-sans/
+├── uploads/
+│   ├── profiles/
+│   └── warranty/
+├── backups/
+├── cache/
+├── temp/
+└── logs/
+    └── system.log
