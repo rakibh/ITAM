@@ -160,6 +160,57 @@ try {
             echo json_encode(['success' => true, 'message' => 'User deleted successfully']);
             break;
             
+        
+        case 'change_password':
+            $userId = intval($_POST['user_id'] ?? 0);
+            $currentPassword = $_POST['current_password'] ?? '';
+            $newPassword = $_POST['new_password'] ?? '';
+            $confirmPassword = $_POST['confirm_password'] ?? '';
+
+            // Check if user is editing own password or admin
+            if ($userId != getCurrentUserId() && !isAdmin()) {
+                throw new Exception('Unauthorized');
+            }
+
+            if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
+                throw new Exception('All fields are required');
+            }
+
+            if ($newPassword !== $confirmPassword) {
+                throw new Exception('Passwords do not match');
+            }
+
+            if (!preg_match(PASSWORD_PATTERN, $newPassword)) {
+                throw new Exception('Password must be 6+ chars with a letter, number, and special character');
+            }
+
+            // Verify current password
+            $stmt = $pdo->prepare("SELECT password, first_name, employee_id FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $user = $stmt->fetch();
+
+            if (!$user) {
+                throw new Exception('User not found');
+            }
+
+            if (!password_verify($currentPassword, $user['password'])) {
+                throw new Exception('Current password is incorrect');
+            }
+
+            // Update password
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare("UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$hashedPassword, $userId]);
+
+            // Add revision
+            addRevision($pdo, 'users', $userId, 'Password changed by user');
+
+            // Log activity
+            logActivity($pdo, 'User Management', 'Change Password', 
+                    "Password changed for: {$user['first_name']} ({$user['employee_id']})", 'Info');
+
+            echo json_encode(['success' => true, 'message' => 'Password changed successfully']);
+            break;
         default:
             throw new Exception('Invalid action');
     }

@@ -1,0 +1,5 @@
+[10-Nov-2025 14:46:59 Asia/Dhaka] Revision history error: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'it_equipment_manager.users_revisions' doesn't exist
+[10-Nov-2025 14:46:59 Asia/Dhaka] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\wamp64\www\it-claud\layouts\header.php:111) in C:\wamp64\www\it-claud\pages\users\edit_user.php on line 130
+[10-Nov-2025 14:46:59 Asia/Dhaka] PHP Stack trace:
+[10-Nov-2025 14:46:59 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\pages\users\edit_user.php:0
+[10-Nov-2025 14:46:59 Asia/Dhaka] PHP   2. header($header = 'Location: view_user.php?id=1') C:\wamp64\www\it-claud\pages\users\edit_user.php:130
