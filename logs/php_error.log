@@ -8,3 +8,37 @@
 [10-Nov-2025 18:42:47 Asia/Dhaka] PHP Stack trace:
 [10-Nov-2025 18:42:47 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\users\edit_user.php:0
 [10-Nov-2025 18:42:47 Asia/Dhaka] PHP   2. header($header = 'Location: view_user.php?id=1') C:\wamp64\www\it-claud\ITAM\pages\users\edit_user.php:130
+[11-Nov-2025 03:00:01 Asia/Dhaka] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\wamp64\www\it-claud\ITAM\layouts\header.php:111) in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 122
+[11-Nov-2025 03:00:01 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 03:00:01 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 03:00:01 Asia/Dhaka] PHP   2. header($header = 'Location: list_network_info.php') C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:122
+[11-Nov-2025 03:05:17 Asia/Dhaka] PHP Warning:  Undefined variable $availableEquipment in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 03:05:17 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 03:05:17 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 03:05:17 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 03:05:17 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 03:05:17 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 03:05:20 Asia/Dhaka] PHP Warning:  Undefined variable $availableEquipment in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 03:05:20 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 03:05:20 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 03:05:20 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 03:05:20 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 03:05:20 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 03:05:34 Asia/Dhaka] PHP Warning:  Undefined variable $availableEquipment in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 03:05:34 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 03:05:34 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 03:05:34 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 03:05:34 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 03:05:34 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 03:09:12 Asia/Dhaka] PHP Warning:  Undefined variable $availableEquipment in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 03:09:12 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 03:09:12 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 03:09:12 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 03:09:12 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 03:09:12 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 03:10:57 Asia/Dhaka] PHP Warning:  Undefined variable $availableEquipment in C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php on line 281
+[11-Nov-2025 03:10:57 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 03:10:57 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php:0
+[11-Nov-2025 03:10:57 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php on line 281
+[11-Nov-2025 03:10:57 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 03:10:57 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php:0
