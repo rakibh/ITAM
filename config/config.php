@@ -4,7 +4,7 @@
 
 // Site Configuration
 define('SITE_NAME', 'IT Equipment Manager');
-define('BASE_URL', 'http://localhost/it-claud/');
+define('BASE_URL', 'http://localhost/it-claud/ITAM/');
 define('SITE_URL', BASE_URL);
 
 // Font Configuration

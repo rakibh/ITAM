@@ -60,23 +60,19 @@ function generateRandomString($length = 32) {
  * Upload file with validation
  */
 function uploadFile($file, $uploadPath, $allowedTypes, $maxSize) {
-    // Check if file was uploaded
     if (!isset($file['error']) || is_array($file['error'])) {
         return ['success' => false, 'message' => 'Invalid file upload'];
     }
 
-    // Check upload errors
     if ($file['error'] !== UPLOAD_ERR_OK) {
         return ['success' => false, 'message' => 'Upload error occurred'];
     }
 
-    // Check file size
     if ($file['size'] > $maxSize) {
         $sizeMB = $maxSize / (1024 * 1024);
         return ['success' => false, 'message' => "File size exceeds {$sizeMB}MB limit"];
     }
 
-    // Check file type
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
     finfo_close($finfo);
@@ -85,12 +81,10 @@ function uploadFile($file, $uploadPath, $allowedTypes, $maxSize) {
         return ['success' => false, 'message' => 'Invalid file type'];
     }
 
-    // Generate unique filename
     $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
     $filename = uniqid('file_', true) . '.' . $extension;
     $destination = $uploadPath . $filename;
 
-    // Move uploaded file
     if (!move_uploaded_file($file['tmp_name'], $destination)) {
         return ['success' => false, 'message' => 'Failed to move uploaded file'];
     }
@@ -117,7 +111,6 @@ function deleteFile($filepath) {
  */
 function createNotification($pdo, $type, $event, $title, $message, $context = null, $createdBy = null) {
     try {
-        // Insert notification
         $stmt = $pdo->prepare("
             INSERT INTO notifications (type, event, title, message, context_json, created_by, created_at)
             VALUES (?, ?, ?, ?, ?, ?, NOW())
@@ -129,7 +122,6 @@ function createNotification($pdo, $type, $event, $title, $message, $context = nu
         $stmt->execute([$type, $event, $title, $message, $contextJson, $createdByName]);
         $notificationId = $pdo->lastInsertId();
         
-        // Create status for all users
         $userStmt = $pdo->query("SELECT id FROM users WHERE status = 'Active'");
         $insertStatusStmt = $pdo->prepare("
             INSERT INTO notification_user_status (notification_id, user_id)
@@ -169,13 +161,34 @@ function logActivity($pdo, $module, $action, $description, $logType = 'Info') {
 }
 
 /**
- * Add revision history
+ * Add revision history (FIXED)
  */
 function addRevision($pdo, $table, $recordId, $description) {
     try {
         $userId = getCurrentUserId();
-        $revisionTable = $table . '_revisions';
-        $idColumn = rtrim($table, 's') . '_id';
+        
+        // Explicit table-to-revision mapping
+        $revisionTableMap = [
+            'users' => 'user_revisions',
+            'equipments' => 'equipment_revisions',
+            'network_info' => 'network_revisions'
+        ];
+        
+        if (!isset($revisionTableMap[$table])) {
+            error_log("Invalid table name for revision: {$table}");
+            return false;
+        }
+        
+        $revisionTable = $revisionTableMap[$table];
+        
+        // Map table to ID column
+        $idColumnMap = [
+            'users' => 'user_id',
+            'equipments' => 'equipment_id',
+            'network_info' => 'network_id'
+        ];
+        
+        $idColumn = $idColumnMap[$table];
         
         $stmt = $pdo->prepare("
             INSERT INTO {$revisionTable} ({$idColumn}, changed_by, change_description, changed_at)
@@ -198,14 +211,12 @@ function getPaginationHTML($currentPage, $totalPages, $baseUrl) {
     
     $html = '<nav aria-label="Page navigation"><ul class="pagination justify-content-center">';
     
-    // Previous button
     if ($currentPage > 1) {
         $html .= '<li class="page-item"><a class="page-link" href="' . $baseUrl . '?page=' . ($currentPage - 1) . '">Previous</a></li>';
     } else {
         $html .= '<li class="page-item disabled"><span class="page-link">Previous</span></li>';
     }
     
-    // Page numbers
     $startPage = max(1, $currentPage - 2);
     $endPage = min($totalPages, $currentPage + 2);
     
@@ -231,7 +242,6 @@ function getPaginationHTML($currentPage, $totalPages, $baseUrl) {
         $html .= '<li class="page-item"><a class="page-link" href="' . $baseUrl . '?page=' . $totalPages . '">' . $totalPages . '</a></li>';
     }
     
-    // Next button
     if ($currentPage < $totalPages) {
         $html .= '<li class="page-item"><a class="page-link" href="' . $baseUrl . '?page=' . ($currentPage + 1) . '">Next</a></li>';
     } else {

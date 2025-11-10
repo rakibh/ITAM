@@ -11,10 +11,27 @@ requireLogin();
 header('Content-Type: application/json');
 
 $equipmentTypeId = intval($_GET['type_id'] ?? 0);
+$equipmentId = intval($_GET['equipment_id'] ?? 0);
+$editMode = isset($_GET['edit_mode']) && $_GET['edit_mode'] == 1;
 
 if (!$equipmentTypeId) {
     echo json_encode(['success' => false, 'message' => 'Equipment type ID required']);
     exit();
+}
+
+// Get existing values if in edit mode
+$existingValues = [];
+if ($editMode && $equipmentId) {
+    $existingStmt = $pdo->prepare("
+        SELECT ecv.field_id, ecv.field_value
+        FROM equipment_custom_values ecv
+        WHERE ecv.equipment_id = ?
+        ORDER BY ecv.id
+    ");
+    $existingStmt->execute([$equipmentId]);
+    while ($row = $existingStmt->fetch()) {
+        $existingValues[$row['field_id']][] = $row['field_value'];
+    }
 }
 
 try {
