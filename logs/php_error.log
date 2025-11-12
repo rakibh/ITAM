@@ -42,3 +42,297 @@
 [11-Nov-2025 03:10:57 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php on line 281
 [11-Nov-2025 03:10:57 Asia/Dhaka] PHP Stack trace:
 [11-Nov-2025 03:10:57 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php:0
+[11-Nov-2025 11:18:07 Asia/Dhaka] PHP Warning:  Undefined variable $availableEquipment in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 11:18:07 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 11:18:07 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 11:18:07 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 11:18:07 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 11:18:07 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 11:19:11 Asia/Dhaka] PHP Warning:  Undefined variable $availableEquipment in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 11:19:11 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 11:19:11 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 11:19:11 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 11:19:11 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 11:19:11 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 11:20:33 Asia/Dhaka] PHP Warning:  Undefined variable $availableEquipment in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 11:20:33 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 11:20:33 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 11:20:33 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 11:20:33 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 11:20:33 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 11:22:46 Asia/Dhaka] PHP Warning:  Undefined variable $availableEquipment in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 11:22:46 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 11:22:46 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 11:22:46 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 11:22:46 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 11:22:46 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 11:23:36 Asia/Dhaka] PHP Warning:  Undefined variable $availableEquipment in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 11:23:36 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 11:23:36 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 11:23:36 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php on line 239
+[11-Nov-2025 11:23:36 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 11:23:36 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\add_network_info.php:0
+[11-Nov-2025 11:46:06 Asia/Dhaka] PHP Warning:  Undefined variable $availableEquipment in C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php on line 281
+[11-Nov-2025 11:46:06 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 11:46:06 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php:0
+[11-Nov-2025 11:46:06 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php on line 281
+[11-Nov-2025 11:46:06 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 11:46:06 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php:0
+[11-Nov-2025 11:54:05 Asia/Dhaka] Todo operation started: add | User: 1 | POST data: Array
+(
+    [csrf_token] => 7629ac1a0c5b35c924ec131707ed6ef319762ae3459f18443eb817f2decca53b
+    [action] => add
+    [title] => Form Test Task 11:53:42
+    [description] => Test description
+    [priority] => Medium
+    [deadline_date] => 2025-11-12
+    [deadline_time] => 
+)
+
+[11-Nov-2025 11:54:05 Asia/Dhaka] Processing add task request
+[11-Nov-2025 11:54:05 Asia/Dhaka] Title: Form Test Task 11:53:42 | Date: 2025-11-12 | Time: 23:59:00 | Users: Array
+(
+)
+
+[11-Nov-2025 11:54:23 Asia/Dhaka] Todo operation started: add | User: 1 | POST data: Array
+(
+    [csrf_token] => 7629ac1a0c5b35c924ec131707ed6ef319762ae3459f18443eb817f2decca53b
+    [action] => add
+    [title] => Form Test Task 11:53:42
+    [description] => Test description
+    [priority] => Medium
+    [deadline_date] => 2025-11-12
+    [deadline_time] => 
+)
+
+[11-Nov-2025 11:54:23 Asia/Dhaka] Processing add task request
+[11-Nov-2025 11:54:23 Asia/Dhaka] Title: Form Test Task 11:53:42 | Date: 2025-11-12 | Time: 23:59:00 | Users: Array
+(
+)
+
+[11-Nov-2025 11:54:39 Asia/Dhaka] Todo operation started: add | User: 1 | POST data: Array
+(
+    [csrf_token] => 7629ac1a0c5b35c924ec131707ed6ef319762ae3459f18443eb817f2decca53b
+    [action] => add
+    [title] => Form Test Task 11:54:33
+    [description] => Test description
+    [priority] => Medium
+    [deadline_date] => 2025-11-12
+    [deadline_time] => 
+    [assigned_users] => Array
+        (
+            [0] => 1
+        )
+
+)
+
+[11-Nov-2025 11:54:39 Asia/Dhaka] Processing add task request
+[11-Nov-2025 11:54:39 Asia/Dhaka] Title: Form Test Task 11:54:33 | Date: 2025-11-12 | Time: 23:59:00 | Users: Array
+(
+    [0] => 1
+)
+
+[11-Nov-2025 11:54:39 Asia/Dhaka] Validation passed, inserting task
+[11-Nov-2025 11:54:39 Asia/Dhaka] Task inserted with ID: 3
+[11-Nov-2025 11:54:39 Asia/Dhaka] Users assigned successfully
+[11-Nov-2025 11:54:39 Asia/Dhaka] Task creation completed successfully
+[11-Nov-2025 12:17:28 Asia/Dhaka] PHP Warning:  Undefined variable $availableEquipment in C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php on line 281
+[11-Nov-2025 12:17:28 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 12:17:28 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php:0
+[11-Nov-2025 12:17:28 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php on line 281
+[11-Nov-2025 12:17:28 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 12:17:28 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php:0
+[11-Nov-2025 12:21:07 Asia/Dhaka] PHP Warning:  Undefined variable $availableEquipment in C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php on line 281
+[11-Nov-2025 12:21:07 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 12:21:07 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php:0
+[11-Nov-2025 12:21:07 Asia/Dhaka] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php on line 281
+[11-Nov-2025 12:21:07 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 12:21:07 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\network\edit_network_info.php:0
+[11-Nov-2025 13:35:13 Asia/Dhaka] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\wamp64\www\it-claud\ITAM\layouts\header.php:108) in C:\wamp64\www\it-claud\ITAM\pages\equipment\add_equipment.php on line 194
+[11-Nov-2025 13:35:13 Asia/Dhaka] PHP Stack trace:
+[11-Nov-2025 13:35:13 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\ITAM\pages\equipment\add_equipment.php:0
+[11-Nov-2025 13:35:13 Asia/Dhaka] PHP   2. header($header = 'Location: view_equipment.php?id=1') C:\wamp64\www\it-claud\ITAM\pages\equipment\add_equipment.php:194
+[11-Nov-2025 19:20:03 Asia/Dhaka] Todo operation started: get_tasks | User: 1 | POST data: Array
+(
+)
+
+[11-Nov-2025 19:20:03 Asia/Dhaka] Getting tasks for tab: undefined
+[11-Nov-2025 19:20:03 Asia/Dhaka] Tab: all | User: 1 | Search: 
+[11-Nov-2025 19:20:03 Asia/Dhaka] SQL WHERE: WHERE t.status NOT IN ('Completed', 'Cancelled') AND (t.created_by = ? OR EXISTS (SELECT 1 FROM todo_assignments WHERE todo_id = t.id AND user_id = ?)) | Params: Array
+(
+    [0] => 1
+    [1] => 1
+)
+
+[11-Nov-2025 19:20:03 Asia/Dhaka] Executing SQL: 
+                SELECT t.*,
+                       CONCAT(creator.first_name, ' ', COALESCE(creator.last_name, '')) as creator_name,
+                       (SELECT GROUP_CONCAT(CONCAT(u.first_name, ' ', COALESCE(u.last_name, '')) SEPARATOR ', ')
+                        FROM todo_assignments ta
+                        JOIN users u ON ta.user_id = u.id
+                        WHERE ta.todo_id = t.id) as assigned_to,
+                       (SELECT COUNT(*) FROM todo_comments WHERE todo_id = t.id) as comment_count
+                FROM todos t
+                JOIN users creator ON t.created_by = creator.id
+                WHERE t.status NOT IN ('Completed', 'Cancelled') AND (t.created_by = ? OR EXISTS (SELECT 1 FROM todo_assignments WHERE todo_id = t.id AND user_id = ?))
+                ORDER BY t.deadline_date ASC, t.id DESC
+            
+[11-Nov-2025 19:20:03 Asia/Dhaka] Found 3 tasks
+[11-Nov-2025 19:20:03 Asia/Dhaka] Counts: Array
+(
+    [all_count] => 3
+    [assigned_count] => 3
+    [ongoing_count] => 0
+    [pending_count] => 0
+    [completed_count] => 0
+    [cancelled_count] => 0
+)
+
+[11-Nov-2025 21:12:39 Asia/Dhaka] Todo operation started: get_tasks | User: 1 | POST data: Array
+(
+)
+
+[11-Nov-2025 21:12:39 Asia/Dhaka] Getting tasks for tab: undefined
+[11-Nov-2025 21:12:39 Asia/Dhaka] Tab: all | User: 1 | Search: 
+[11-Nov-2025 21:12:39 Asia/Dhaka] SQL WHERE: WHERE t.status NOT IN ('Completed', 'Cancelled') AND (t.created_by = ? OR EXISTS (SELECT 1 FROM todo_assignments WHERE todo_id = t.id AND user_id = ?)) | Params: Array
+(
+    [0] => 1
+    [1] => 1
+)
+
+[11-Nov-2025 21:12:39 Asia/Dhaka] Executing SQL: 
+                SELECT t.*,
+                       CONCAT(creator.first_name, ' ', COALESCE(creator.last_name, '')) as creator_name,
+                       (SELECT GROUP_CONCAT(CONCAT(u.first_name, ' ', COALESCE(u.last_name, '')) SEPARATOR ', ')
+                        FROM todo_assignments ta
+                        JOIN users u ON ta.user_id = u.id
+                        WHERE ta.todo_id = t.id) as assigned_to,
+                       (SELECT COUNT(*) FROM todo_comments WHERE todo_id = t.id) as comment_count
+                FROM todos t
+                JOIN users creator ON t.created_by = creator.id
+                WHERE t.status NOT IN ('Completed', 'Cancelled') AND (t.created_by = ? OR EXISTS (SELECT 1 FROM todo_assignments WHERE todo_id = t.id AND user_id = ?))
+                ORDER BY t.deadline_date ASC, t.id DESC
+            
+[11-Nov-2025 21:12:39 Asia/Dhaka] Found 3 tasks
+[11-Nov-2025 21:12:39 Asia/Dhaka] Counts: Array
+(
+    [all_count] => 3
+    [assigned_count] => 3
+    [ongoing_count] => 0
+    [pending_count] => 0
+    [completed_count] => 0
+    [cancelled_count] => 0
+)
+
+[11-Nov-2025 21:12:46 Asia/Dhaka] Todo operation started: get_tasks | User: 1 | POST data: Array
+(
+)
+
+[11-Nov-2025 21:12:46 Asia/Dhaka] Getting tasks for tab: undefined
+[11-Nov-2025 21:12:46 Asia/Dhaka] Tab: all | User: 1 | Search: 
+[11-Nov-2025 21:12:46 Asia/Dhaka] SQL WHERE: WHERE t.status NOT IN ('Completed', 'Cancelled') AND (t.created_by = ? OR EXISTS (SELECT 1 FROM todo_assignments WHERE todo_id = t.id AND user_id = ?)) | Params: Array
+(
+    [0] => 1
+    [1] => 1
+)
+
+[11-Nov-2025 21:12:46 Asia/Dhaka] Executing SQL: 
+                SELECT t.*,
+                       CONCAT(creator.first_name, ' ', COALESCE(creator.last_name, '')) as creator_name,
+                       (SELECT GROUP_CONCAT(CONCAT(u.first_name, ' ', COALESCE(u.last_name, '')) SEPARATOR ', ')
+                        FROM todo_assignments ta
+                        JOIN users u ON ta.user_id = u.id
+                        WHERE ta.todo_id = t.id) as assigned_to,
+                       (SELECT COUNT(*) FROM todo_comments WHERE todo_id = t.id) as comment_count
+                FROM todos t
+                JOIN users creator ON t.created_by = creator.id
+                WHERE t.status NOT IN ('Completed', 'Cancelled') AND (t.created_by = ? OR EXISTS (SELECT 1 FROM todo_assignments WHERE todo_id = t.id AND user_id = ?))
+                ORDER BY t.deadline_date ASC, t.id DESC
+            
+[11-Nov-2025 21:12:46 Asia/Dhaka] Found 3 tasks
+[11-Nov-2025 21:12:46 Asia/Dhaka] Counts: Array
+(
+    [all_count] => 3
+    [assigned_count] => 3
+    [ongoing_count] => 0
+    [pending_count] => 0
+    [completed_count] => 0
+    [cancelled_count] => 0
+)
+
+[11-Nov-2025 21:12:51 Asia/Dhaka] Todo operation started: get_tasks | User: 1 | POST data: Array
+(
+)
+
+[11-Nov-2025 21:12:51 Asia/Dhaka] Getting tasks for tab: undefined
+[11-Nov-2025 21:12:51 Asia/Dhaka] Tab: all | User: 1 | Search: 
+[11-Nov-2025 21:12:51 Asia/Dhaka] SQL WHERE: WHERE t.status NOT IN ('Completed', 'Cancelled') AND (t.created_by = ? OR EXISTS (SELECT 1 FROM todo_assignments WHERE todo_id = t.id AND user_id = ?)) | Params: Array
+(
+    [0] => 1
+    [1] => 1
+)
+
+[11-Nov-2025 21:12:51 Asia/Dhaka] Executing SQL: 
+                SELECT t.*,
+                       CONCAT(creator.first_name, ' ', COALESCE(creator.last_name, '')) as creator_name,
+                       (SELECT GROUP_CONCAT(CONCAT(u.first_name, ' ', COALESCE(u.last_name, '')) SEPARATOR ', ')
+                        FROM todo_assignments ta
+                        JOIN users u ON ta.user_id = u.id
+                        WHERE ta.todo_id = t.id) as assigned_to,
+                       (SELECT COUNT(*) FROM todo_comments WHERE todo_id = t.id) as comment_count
+                FROM todos t
+                JOIN users creator ON t.created_by = creator.id
+                WHERE t.status NOT IN ('Completed', 'Cancelled') AND (t.created_by = ? OR EXISTS (SELECT 1 FROM todo_assignments WHERE todo_id = t.id AND user_id = ?))
+                ORDER BY t.deadline_date ASC, t.id DESC
+            
+[11-Nov-2025 21:12:51 Asia/Dhaka] Found 3 tasks
+[11-Nov-2025 21:12:51 Asia/Dhaka] Counts: Array
+(
+    [all_count] => 3
+    [assigned_count] => 3
+    [ongoing_count] => 0
+    [pending_count] => 0
+    [completed_count] => 0
+    [cancelled_count] => 0
+)
+
+[11-Nov-2025 21:23:20 Asia/Dhaka] Todo operation started: get_tasks | User: 1 | POST data: Array
+(
+)
+
+[11-Nov-2025 21:23:20 Asia/Dhaka] Getting tasks for tab: undefined
+[11-Nov-2025 21:23:20 Asia/Dhaka] Tab: all | User: 1 | Search: 
+[11-Nov-2025 21:23:20 Asia/Dhaka] SQL WHERE: WHERE t.status NOT IN ('Completed', 'Cancelled') AND (t.created_by = ? OR EXISTS (SELECT 1 FROM todo_assignments WHERE todo_id = t.id AND user_id = ?)) | Params: Array
+(
+    [0] => 1
+    [1] => 1
+)
+
+[11-Nov-2025 21:23:20 Asia/Dhaka] Executing SQL: 
+                SELECT t.*,
+                       CONCAT(creator.first_name, ' ', COALESCE(creator.last_name, '')) as creator_name,
+                       (SELECT GROUP_CONCAT(CONCAT(u.first_name, ' ', COALESCE(u.last_name, '')) SEPARATOR ', ')
+                        FROM todo_assignments ta
+                        JOIN users u ON ta.user_id = u.id
+                        WHERE ta.todo_id = t.id) as assigned_to,
+                       (SELECT COUNT(*) FROM todo_comments WHERE todo_id = t.id) as comment_count
+                FROM todos t
+                JOIN users creator ON t.created_by = creator.id
+                WHERE t.status NOT IN ('Completed', 'Cancelled') AND (t.created_by = ? OR EXISTS (SELECT 1 FROM todo_assignments WHERE todo_id = t.id AND user_id = ?))
+                ORDER BY t.deadline_date ASC, t.id DESC
+            
+[11-Nov-2025 21:23:20 Asia/Dhaka] Found 3 tasks
+[11-Nov-2025 21:23:20 Asia/Dhaka] Counts: Array
+(
+    [all_count] => 3
+    [assigned_count] => 3
+    [ongoing_count] => 0
+    [pending_count] => 0
+    [completed_count] => 0
+    [cancelled_count] => 0
+)
+
+[12-Nov-2025 00:18:44 Asia/Dhaka] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\wamp64\www\it-claud\itam\layouts\header.php:108) in C:\wamp64\www\it-claud\itam\pages\equipment\add_equipment.php on line 194
+[12-Nov-2025 00:18:44 Asia/Dhaka] PHP Stack trace:
+[12-Nov-2025 00:18:44 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\itam\pages\equipment\add_equipment.php:0
+[12-Nov-2025 00:18:44 Asia/Dhaka] PHP   2. header($header = 'Location: view_equipment.php?id=2') C:\wamp64\www\it-claud\itam\pages\equipment\add_equipment.php:194

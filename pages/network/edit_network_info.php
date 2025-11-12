@@ -155,6 +155,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['csrf_token'])) {
     }
 }
 
+// Get available equipment (including currently assigned) BEFORE including header
+$equipmentStmt = $pdo->prepare("
+    SELECT e.id, e.label, e.serial_number, et.type_name
+    FROM equipments e
+    JOIN equipment_types et ON e.equipment_type_id = et.id
+    WHERE e.id NOT IN (
+        SELECT equipment_id FROM network_info WHERE equipment_id IS NOT NULL AND id != ?
+    )
+    ORDER BY e.label
+");
+$equipmentStmt->execute([$networkId]);
+$availableEquipment = $equipmentStmt->fetchAll();
+
+// NOW include header
+$pageTitle = 'Edit Network Info';
+require_once ROOT_PATH . 'layouts/header.php';
+
 $flash = getFlashMessage();
 ?>
 
@@ -163,9 +180,22 @@ $flash = getFlashMessage();
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2"><i class="bi bi-pencil-square me-2"></i>Edit Network Information</h1>
-        <a href="view_network_info.php?id=<?php echo $networkId; ?>" class="btn btn-secondary">
-            <i class="bi bi-x-circle"></i> Cancel
-        </a>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <?php if (!$network['equipment_id']): ?>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteNetworkModal">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+                <?php else: ?>
+                <button type="button" class="btn btn-outline-warning" onclick="showUnassignFirst()">
+                    <i class="bi bi-exclamation-triangle"></i> Delete (Must Unassign First)
+                </button>
+                <?php endif; ?>
+            </div>
+            <a href="view_network_info.php?id=<?php echo $networkId; ?>" class="btn btn-secondary">
+                <i class="bi bi-x-circle"></i> Cancel
+            </a>
+        </div>
     </div>
 
     <div id="alert-container">
@@ -288,7 +318,7 @@ $flash = getFlashMessage();
                             <?php endforeach; ?>
                         </select>
                         <?php if ($network['equipment_id']): ?>
-                        <small class="text-muted">
+                        <small class="text-muted mt-2 d-block">
                             Currently assigned to: 
                             <a href="<?php echo BASE_URL; ?>pages/equipment/view_equipment.php?id=<?php echo $network['equipment_id']; ?>" target="_blank">
                                 <?php echo htmlspecialchars($network['equipment_label']); ?>
@@ -324,61 +354,158 @@ $flash = getFlashMessage();
     </form>
 </main>
 
-<script>
-// IP address validation
-$('#ip_address').on('input blur', function() {
-    const ip = $(this).val().trim();
-    if (ip && !validateIP(ip)) {
-        $(this).addClass('is-invalid');
-    } else {
-        $(this).removeClass('is-invalid');
-    }
-});
+<!-- Delete Network Modal (Only if Unassigned) -->
+<div class="modal fade" id="deleteNetworkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Are you sure you want to delete this network information?</p>
+                <div class="alert alert-warning">
+                    <strong>IP Address:</strong> <?php echo htmlspecialchars($network['ip_address']); ?><br>
+                    <?php if ($network['mac_address']): ?>
+                    <strong>MAC Address:</strong> <?php echo htmlspecialchars($network['mac_address']); ?><br>
+                    <?php endif; ?>
+                </div>
+                <p class="text-danger mb-0"><strong>This action cannot be undone!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="bi bi-trash"></i> Yes, Delete Network Info
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
-// MAC address validation
-$('#mac_address').on('blur', function() {
-    const mac = $(this).val().trim();
-    if (mac && mac.toUpperCase() !== 'N/A') {
-        const macPattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
-        if (!macPattern.test(mac)) {
+<!-- Unassign First Warning Modal -->
+<div class="modal fade" id="unassignWarningModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Cannot Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">This network info is currently assigned to equipment and cannot be deleted.</p>
+                <div class="alert alert-info">
+                    <strong>Assigned to:</strong> <?php echo htmlspecialchars($network['equipment_label'] ?? 'Equipment'); ?>
+                </div>
+                <p class="mb-0">Please unassign it from the equipment first by selecting "Unassigned" in the dropdown above, then save changes.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">OK, I Understand</button>
+                <button type="button" class="btn btn-warning" data-bs-dismiss="modal" onclick="focusEquipmentDropdown()">
+                    <i class="bi bi-link-45deg"></i> Go to Assignment Section
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // IP address validation
+    $('#ip_address').on('input blur', function() {
+        const ip = $(this).val().trim();
+        if (ip && !validateIP(ip)) {
             $(this).addClass('is-invalid');
-            if (!$(this).siblings('.invalid-feedback').length) {
-                $(this).after('<div class="invalid-feedback">Invalid MAC address format (XX:XX:XX:XX:XX:XX)</div>');
+        } else {
+            $(this).removeClass('is-invalid');
+        }
+    });
+
+    // MAC address validation
+    $('#mac_address').on('blur', function() {
+        const mac = $(this).val().trim();
+        if (mac && mac.toUpperCase() !== 'N/A') {
+            const macPattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+            if (!macPattern.test(mac)) {
+                $(this).addClass('is-invalid');
+                if (!$(this).siblings('.invalid-feedback').length) {
+                    $(this).after('<div class="invalid-feedback">Invalid MAC address format (XX:XX:XX:XX:XX:XX)</div>');
+                }
+            } else {
+                $(this).removeClass('is-invalid');
+                $(this).siblings('.invalid-feedback').remove();
             }
         } else {
             $(this).removeClass('is-invalid');
             $(this).siblings('.invalid-feedback').remove();
         }
-    } else {
-        $(this).removeClass('is-invalid');
-        $(this).siblings('.invalid-feedback').remove();
-    }
-});
+    });
 
-// Form validation before submit
-$('#editNetworkForm').on('submit', function(e) {
-    const ip = $('#ip_address').val().trim();
-    
-    if (!ip || !validateIP(ip)) {
-        e.preventDefault();
-        $('#ip_address').addClass('is-invalid');
-        showAlert('danger', 'Please enter a valid IP address');
-        $('#ip_address').focus();
-        return false;
-    }
-    
-    const mac = $('#mac_address').val().trim();
-    if (mac && mac.toUpperCase() !== 'N/A') {
-        const macPattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
-        if (!macPattern.test(mac)) {
+    // Form validation before submit
+    $('#editNetworkForm').on('submit', function(e) {
+        const ip = $('#ip_address').val().trim();
+        
+        if (!ip || !validateIP(ip)) {
             e.preventDefault();
-            $('#mac_address').addClass('is-invalid');
-            showAlert('danger', 'Please enter a valid MAC address');
-            $('#mac_address').focus();
+            $('#ip_address').addClass('is-invalid');
+            showAlert('danger', 'Please enter a valid IP address');
+            $('#ip_address').focus();
             return false;
         }
-    }
+        
+        const mac = $('#mac_address').val().trim();
+        if (mac && mac.toUpperCase() !== 'N/A') {
+            const macPattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+            if (!macPattern.test(mac)) {
+                e.preventDefault();
+                $('#mac_address').addClass('is-invalid');
+                showAlert('danger', 'Please enter a valid MAC address');
+                $('#mac_address').focus();
+                return false;
+            }
+        }
+    });
 });
+
+// Show warning if trying to delete assigned network
+function showUnassignFirst() {
+    $('#unassignWarningModal').modal('show');
+}
+
+// Focus on equipment dropdown
+function focusEquipmentDropdown() {
+    $('html, body').animate({
+        scrollTop: $('#equipment_id').offset().top - 100
+    }, 500);
+    $('#equipment_id').focus();
+}
+
+// Confirm and execute delete
+function confirmDelete() {
+    $('#deleteNetworkModal').modal('hide');
+    
+    $.ajax({
+        url: '<?php echo BASE_URL; ?>ajax/network_operations.php',
+        type: 'POST',
+        data: {
+            action: 'delete',
+            network_id: <?php echo $networkId; ?>,
+            csrf_token: '<?php echo getCsrfToken(); ?>'
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                showAlert('success', response.message);
+                setTimeout(() => {
+                    window.location.href = 'list_network_info.php';
+                }, 1500);
+            } else {
+                showAlert('danger', response.message);
+            }
+        },
+        error: function(xhr) {
+            showAlert('danger', xhr.responseJSON?.message || 'Error deleting network info');
+        }
+    });
+}
 </script>
 
 <?php require_once ROOT_PATH . 'layouts/footer.php'; ?>

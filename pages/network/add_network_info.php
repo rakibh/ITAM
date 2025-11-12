@@ -121,6 +121,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['csrf_token'])) {
         $error = 'Invalid CSRF token';
     }
 }
+
+// NOW include header after form processing
+$pageTitle = 'Add Network Info';
+require_once ROOT_PATH . 'layouts/header.php';
+
+// Get available equipment (those without network info)
+$equipmentStmt = $pdo->query("
+    SELECT e.id, e.label, e.serial_number, et.type_name
+    FROM equipments e
+    JOIN equipment_types et ON e.equipment_type_id = et.id
+    WHERE e.id NOT IN (
+        SELECT equipment_id FROM network_info WHERE equipment_id IS NOT NULL
+    )
+    ORDER BY e.label
+");
+$availableEquipment = $equipmentStmt->fetchAll();
 ?>
 
 <?php require_once ROOT_PATH . 'layouts/sidebar.php'; ?>
@@ -277,58 +293,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['csrf_token'])) {
 
 <script>
 // IP address validation
-$('#ip_address').on('input blur', function() {
-    const ip = $(this).val().trim();
-    if (ip && !validateIP(ip)) {
-        $(this).addClass('is-invalid');
-    } else {
-        $(this).removeClass('is-invalid');
-    }
-});
-
-// MAC address validation
-$('#mac_address').on('blur', function() {
-    const mac = $(this).val().trim();
-    if (mac && mac.toUpperCase() !== 'N/A') {
-        const macPattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
-        if (!macPattern.test(mac)) {
+$(document).ready(function() {
+    $('#ip_address').on('input blur', function() {
+        const ip = $(this).val().trim();
+        if (ip && !validateIP(ip)) {
             $(this).addClass('is-invalid');
-            if (!$(this).siblings('.invalid-feedback').length) {
-                $(this).after('<div class="invalid-feedback">Invalid MAC address format (XX:XX:XX:XX:XX:XX)</div>');
+        } else {
+            $(this).removeClass('is-invalid');
+        }
+    });
+
+    // MAC address validation
+    $('#mac_address').on('blur', function() {
+        const mac = $(this).val().trim();
+        if (mac && mac.toUpperCase() !== 'N/A') {
+            const macPattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+            if (!macPattern.test(mac)) {
+                $(this).addClass('is-invalid');
+                if (!$(this).siblings('.invalid-feedback').length) {
+                    $(this).after('<div class="invalid-feedback">Invalid MAC address format (XX:XX:XX:XX:XX:XX)</div>');
+                }
+            } else {
+                $(this).removeClass('is-invalid');
+                $(this).siblings('.invalid-feedback').remove();
             }
         } else {
             $(this).removeClass('is-invalid');
             $(this).siblings('.invalid-feedback').remove();
         }
-    } else {
-        $(this).removeClass('is-invalid');
-        $(this).siblings('.invalid-feedback').remove();
-    }
-});
+    });
 
-// Form validation before submit
-$('#addNetworkForm').on('submit', function(e) {
-    const ip = $('#ip_address').val().trim();
-    
-    if (!ip || !validateIP(ip)) {
-        e.preventDefault();
-        $('#ip_address').addClass('is-invalid');
-        showAlert('danger', 'Please enter a valid IP address');
-        $('#ip_address').focus();
-        return false;
-    }
-    
-    const mac = $('#mac_address').val().trim();
-    if (mac && mac.toUpperCase() !== 'N/A') {
-        const macPattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
-        if (!macPattern.test(mac)) {
+    // Form validation before submit
+    $('#addNetworkForm').on('submit', function(e) {
+        const ip = $('#ip_address').val().trim();
+        
+        if (!ip || !validateIP(ip)) {
             e.preventDefault();
-            $('#mac_address').addClass('is-invalid');
-            showAlert('danger', 'Please enter a valid MAC address');
-            $('#mac_address').focus();
+            $('#ip_address').addClass('is-invalid');
+            showAlert('danger', 'Please enter a valid IP address');
+            $('#ip_address').focus();
             return false;
         }
-    }
+        
+        const mac = $('#mac_address').val().trim();
+        if (mac && mac.toUpperCase() !== 'N/A') {
+            const macPattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+            if (!macPattern.test(mac)) {
+                e.preventDefault();
+                $('#mac_address').addClass('is-invalid');
+                showAlert('danger', 'Please enter a valid MAC address');
+                $('#mac_address').focus();
+                return false;
+            }
+        }
+    });
 });
 </script>
 

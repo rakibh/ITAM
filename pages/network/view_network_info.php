@@ -39,6 +39,7 @@ if (!$network) {
 }
 
 // Get revision history (last 100 for admin)
+$revisions = [];
 if (isAdmin()) {
     $revisionStmt = $pdo->prepare("
         SELECT nr.*, u.first_name, u.last_name, u.employee_id
@@ -51,6 +52,10 @@ if (isAdmin()) {
     $revisionStmt->execute([$networkId]);
     $revisions = $revisionStmt->fetchAll();
 }
+
+// Include header AFTER data fetching but BEFORE any HTML output
+$pageTitle = 'View Network Info';
+require_once ROOT_PATH . 'layouts/header.php';
 ?>
 
 <?php require_once ROOT_PATH . 'layouts/sidebar.php'; ?>
@@ -305,59 +310,63 @@ if (isAdmin()) {
 </main>
 
 <script>
-function deleteNetwork() {
-    if (confirm('Delete network info for IP <?php echo htmlspecialchars($network['ip_address']); ?>? This action cannot be undone.')) {
-        $.ajax({
-            url: '<?php echo BASE_URL; ?>ajax/network_operations.php',
-            type: 'POST',
-            data: {
-                action: 'delete',
-                network_id: <?php echo $networkId; ?>,
-                csrf_token: '<?php echo getCsrfToken(); ?>'
-            },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    showAlert('success', response.message);
-                    setTimeout(() => {
-                        window.location.href = 'list_network_info.php';
-                    }, 1500);
-                } else {
-                    showAlert('danger', response.message);
+$(document).ready(function() {
+    // Delete network function
+    window.deleteNetwork = function() {
+        if (confirm('Delete network info for IP <?php echo htmlspecialchars($network['ip_address']); ?>? This action cannot be undone.')) {
+            $.ajax({
+                url: '<?php echo BASE_URL; ?>ajax/network_operations.php',
+                type: 'POST',
+                data: {
+                    action: 'delete',
+                    network_id: <?php echo $networkId; ?>,
+                    csrf_token: '<?php echo getCsrfToken(); ?>'
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        showAlert('success', response.message);
+                        setTimeout(() => {
+                            window.location.href = 'list_network_info.php';
+                        }, 1500);
+                    } else {
+                        showAlert('danger', response.message);
+                    }
+                },
+                error: function(xhr) {
+                    showAlert('danger', xhr.responseJSON?.message || 'Error deleting network info');
                 }
-            },
-            error: function(xhr) {
-                showAlert('danger', xhr.responseJSON?.message || 'Error deleting network info');
-            }
-        });
-    }
-}
+            });
+        }
+    };
 
-function unassignNetwork() {
-    if (confirm('Unassign this network info from its equipment?')) {
-        $.ajax({
-            url: '<?php echo BASE_URL; ?>ajax/network_operations.php',
-            type: 'POST',
-            data: {
-                action: 'unassign',
-                network_id: <?php echo $networkId; ?>,
-                csrf_token: '<?php echo getCsrfToken(); ?>'
-            },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    showAlert('success', response.message);
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    showAlert('danger', response.message);
+    // Unassign network function
+    window.unassignNetwork = function() {
+        if (confirm('Unassign this network info from its equipment?')) {
+            $.ajax({
+                url: '<?php echo BASE_URL; ?>ajax/network_operations.php',
+                type: 'POST',
+                data: {
+                    action: 'unassign',
+                    network_id: <?php echo $networkId; ?>,
+                    csrf_token: '<?php echo getCsrfToken(); ?>'
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        showAlert('success', response.message);
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert('danger', response.message);
+                    }
+                },
+                error: function(xhr) {
+                    showAlert('danger', xhr.responseJSON?.message || 'Error unassigning network info');
                 }
-            },
-            error: function(xhr) {
-                showAlert('danger', xhr.responseJSON?.message || 'Error unassigning network info');
-            }
-        });
-    }
-}
+            });
+        }
+    };
+});
 </script>
 
 <?php require_once ROOT_PATH . 'layouts/footer.php'; ?>

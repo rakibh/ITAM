@@ -1,6 +1,7 @@
 <?php
-// File: pages/todos/edit_todo.php
-// Purpose: Edit existing task (creator or admin only)
+// Folder: pages/todos/
+// File: edit_todo.php
+// Purpose: Standalone page to edit existing task (alternative to modal)
 
 define('ROOT_PATH', dirname(dirname(__DIR__)) . '/');
 $pageTitle = 'Edit Task';
@@ -10,37 +11,89 @@ requireLogin();
 
 $todoId = intval($_GET['id'] ?? 0);
 
+if (!$todoId) {
+    header('Location: list_todos.php');
+    exit();
+}
+
 // Get task details
 $stmt = $pdo->prepare("SELECT * FROM todos WHERE id = ?");
 $stmt->execute([$todoId]);
 $task = $stmt->fetch();
 
 if (!$task) {
-    header('Location: ' . BASE_URL . 'pages/todos/list_todos.php');
+    setFlashMessage('danger', 'Task not found');
+    header('Location: list_todos.php');
     exit();
 }
 
 // Check permission
 if ($task['created_by'] != getCurrentUserId() && !isAdmin()) {
-    header('Location: ' . BASE_URL . 'pages/todos/view_todo.php?id=' . $todoId);
+    setFlashMessage('danger', 'You do not have permission to edit this task');
+    header('Location: list_todos.php');
     exit();
 }
 
 // Get assigned users
-$assignedStmt = $pdo->prepare("
-    SELECT user_id FROM todo_assignments WHERE todo_id = ?
-");
-$assignedStmt->execute([$todoId]);
-$assignedUserIds = array_column($assignedStmt->fetchAll(), 'user_id');
+$stmt = $pdo->prepare("SELECT user_id FROM todo_assignments WHERE todo_id = ?");
+$stmt->execute([$todoId]);
+$assignedUserIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
 // Get all active users
-$usersStmt = $pdo->query("
-    SELECT id, first_name, last_name, employee_id 
-    FROM users 
-    WHERE status = 'Active' 
-    ORDER BY first_name
-");
+$usersStmt = $pdo->query("SELECT id, first_name, last_name, employee_id FROM users WHERE status = 'Active' ORDER BY first_name");
 $allUsers = $usersStmt->fetchAll();
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        $title = sanitize($_POST['title'] ?? '');
+        $description = sanitize($_POST['description'] ?? '') ?: null;
+        $tags = sanitize($_POST['tags'] ?? '') ?: null;
+        $priority = sanitize($_POST['priority'] ?? 'Medium');
+        $deadlineDate = sanitize($_POST['deadline_date'] ?? '');
+        $deadlineTime = sanitize($_POST['deadline_time'] ?? '');
+        $assignedUsers = $_POST['assigned_users'] ?? [];
+        
+        if (empty($title) || empty($deadlineDate) || empty($deadlineTime)) {
+            throw new Exception('Title, deadline date, and time are required');
+        }
+        
+        if (empty($assignedUsers)) {
+            throw new Exception('At least one user must be assigned');
+        }
+        
+        // Update todo
+        $stmt = $pdo->prepare("
+            UPDATE todos 
+            SET title = ?, description = ?, tags = ?, priority = ?, 
+                deadline_date = ?, deadline_time = ?, updated_at = NOW()
+            WHERE id = ?
+        ");
+        $stmt->execute([$title, $description, $tags, $priority, $deadlineDate, $deadlineTime, $todoId]);
+        
+        // Update assignments
+        $pdo->prepare("DELETE FROM todo_assignments WHERE todo_id = ?")->execute([$todoId]);
+        $assignStmt = $pdo->prepare("INSERT INTO todo_assignments (todo_id, user_id) VALUES (?, ?)");
+        foreach ($assignedUsers as $userId) {
+            $assignStmt->execute([$todoId, intval($userId)]);
+        }
+        
+        // Log activity
+        logActivity($pdo, 'Tasks', 'Update Task', getCurrentUserName() . " updated task: {$title}", 'Info');
+        
+        // Create notification
+        createNotification($pdo, 'Todo', 'update', 'Task Updated', 
+                          getCurrentUserName() . " updated task: {$title}", 
+                          ['todo_id' => $todoId]);
+        
+        setFlashMessage('success', 'Task updated successfully!');
+        header('Location: view_todo.php?id=' . $todoId);
+        exit();
+        
+    } catch (Exception $e) {
+        $errorMessage = $e->getMessage();
+    }
+}
 ?>
 
 <?php require_once ROOT_PATH . 'layouts/sidebar.php'; ?>
@@ -49,131 +102,105 @@ $allUsers = $usersStmt->fetchAll();
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2"><i class="bi bi-pencil me-2"></i>Edit Task</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
-            <a href="<?php echo BASE_URL; ?>pages/todos/view_todo.php?id=<?php echo $todoId; ?>" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Back
+            <a href="view_todo.php?id=<?php echo $todoId; ?>" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Task
             </a>
         </div>
     </div>
 
-    <div id="alert-container"></div>
+    <div id="alert-container">
+        <?php if (isset($errorMessage)): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php echo htmlspecialchars($errorMessage); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+    </div>
 
-    <div class="row">
-        <div class="col-lg-8 mx-auto">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form id="editTaskForm">
-                        <input type="hidden" name="todo_id" value="<?php echo $todoId; ?>">
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Title <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="title" 
-                                   value="<?php echo htmlspecialchars($task['title']); ?>" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Description</label>
-                            <textarea class="form-control" name="description" rows="4"><?php echo htmlspecialchars($task['description']); ?></textarea>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Tags</label>
-                                <input type="text" class="form-control" name="tags" 
-                                       value="<?php echo htmlspecialchars($task['tags']); ?>" 
-                                       placeholder="e.g., urgent, hardware">
-                                <small class="text-muted">Separate tags with commas</small>
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Priority <span class="text-danger">*</span></label>
-                                <select class="form-select" name="priority" required>
-                                    <option value="Low" <?php echo $task['priority'] === 'Low' ? 'selected' : ''; ?>>Low</option>
-                                    <option value="Medium" <?php echo $task['priority'] === 'Medium' ? 'selected' : ''; ?>>Medium</option>
-                                    <option value="High" <?php echo $task['priority'] === 'High' ? 'selected' : ''; ?>>High</option>
-                                    <option value="Urgent" <?php echo $task['priority'] === 'Urgent' ? 'selected' : ''; ?>>Urgent</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Deadline Date <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" name="deadline_date" 
-                                       value="<?php echo $task['deadline_date']; ?>" required>
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Deadline Time <span class="text-danger">*</span></label>
-                                <input type="time" class="form-control" name="deadline_time" 
-                                       value="<?php echo $task['deadline_time']; ?>" required>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Assign To <span class="text-danger">*</span></label>
-                            <select class="form-select" name="assigned_users[]" multiple size="8" required>
-                                <?php foreach ($allUsers as $user): ?>
-                                    <option value="<?php echo $user['id']; ?>" 
-                                            <?php echo in_array($user['id'], $assignedUserIds) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($user['first_name'] . ' ' . ($user['last_name'] ?? '') . ' (' . $user['employee_id'] . ')'); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <small class="text-muted">Hold Ctrl/Cmd to select multiple users</small>
-                        </div>
-
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="POST">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Task Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="title" required 
+                               placeholder="Enter a clear and concise task title"
+                               value="<?php echo htmlspecialchars($_POST['title'] ?? $task['title']); ?>">
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="4" 
+                                  placeholder="Provide detailed information about the task..."><?php echo htmlspecialchars($_POST['description'] ?? $task['description'] ?? ''); ?></textarea>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label">Tags (comma separated)</label>
+                        <input type="text" class="form-control" name="tags" 
+                               placeholder="e.g., urgent, hardware, network"
+                               value="<?php echo htmlspecialchars($_POST['tags'] ?? $task['tags'] ?? ''); ?>">
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label">Priority <span class="text-danger">*</span></label>
+                        <select class="form-select" name="priority" required>
+                            <?php 
+                            $currentPriority = $_POST['priority'] ?? $task['priority'];
+                            $priorities = ['Low', 'Medium', 'High', 'Urgent'];
+                            foreach ($priorities as $priority) {
+                                $selected = $currentPriority === $priority ? 'selected' : '';
+                                echo "<option value=\"{$priority}\" {$selected}>{$priority}</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label">Deadline Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="deadline_date" required
+                               value="<?php echo htmlspecialchars($_POST['deadline_date'] ?? $task['deadline_date']); ?>">
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label">Deadline Time <span class="text-danger">*</span></label>
+                        <input type="time" class="form-control" name="deadline_time" required
+                               value="<?php echo htmlspecialchars($_POST['deadline_time'] ?? $task['deadline_time']); ?>">
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="form-label">Assign To <span class="text-danger">*</span></label>
+                        <select class="form-select" name="assigned_users[]" multiple size="8" required>
+                            <?php 
+                            $currentAssignments = $_POST['assigned_users'] ?? $assignedUserIds;
+                            foreach ($allUsers as $user): 
+                                $selected = in_array($user['id'], $currentAssignments) ? 'selected' : '';
+                            ?>
+                                <option value="<?php echo $user['id']; ?>" <?php echo $selected; ?>>
+                                    <?php echo htmlspecialchars($user['first_name'] . ' ' . ($user['last_name'] ?? '') . ' (' . $user['employee_id'] . ')'); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="text-muted">Hold Ctrl/Cmd to select multiple users</small>
+                    </div>
+                    
+                    <div class="col-12">
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle me-2"></i>
-                            <strong>Note:</strong> Current task status is <strong><?php echo $task['status']; ?></strong>. 
-                            To change the status, please use the status buttons in the view page.
+                            <strong>Note:</strong> Changes to this task will notify all assigned users.
                         </div>
-
-                        <div class="d-flex gap-2">
+                    </div>
+                    
+                    <div class="col-12">
+                        <hr>
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="view_todo.php?id=<?php echo $todoId; ?>" class="btn btn-secondary">Cancel</a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Save Changes
+                                <i class="bi bi-check-circle me-1"></i>Update Task
                             </button>
-                            <a href="<?php echo BASE_URL; ?>pages/todos/view_todo.php?id=<?php echo $todoId; ?>" 
-                               class="btn btn-secondary">Cancel</a>
                         </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Edit History (for admins) -->
-            <?php if (isAdmin()): ?>
-            <div class="card shadow-sm mt-4">
-                <div class="card-header">
-                    <h6 class="mb-0">Edit History</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Field</th>
-                                    <th>Change</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><?php echo formatDate($task['created_at']); ?></td>
-                                    <td>Created</td>
-                                    <td>Task created</td>
-                                </tr>
-                                <?php if ($task['updated_at'] !== $task['created_at']): ?>
-                                <tr>
-                                    <td><?php echo formatDate($task['updated_at']); ?></td>
-                                    <td>Updated</td>
-                                    <td>Task last modified</td>
-                                </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
-            </div>
-            <?php endif; ?>
+            </form>
         </div>
     </div>
 </main>
@@ -181,52 +208,14 @@ $allUsers = $usersStmt->fetchAll();
 <script>
 $(document).ready(function() {
     // Form validation
-    $('#editTaskForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        // Validate deadline is in future
-        const deadlineDate = $('input[name="deadline_date"]').val();
-        const deadlineTime = $('input[name="deadline_time"]').val();
-        const deadline = new Date(deadlineDate + ' ' + deadlineTime);
-        const now = new Date();
-        
-        if (deadline <= now) {
-            showAlert('warning', 'Deadline must be in the future');
-            return false;
-        }
-        
-        // Validate at least one user is assigned
+    $('form').on('submit', function(e) {
         const assignedUsers = $('select[name="assigned_users[]"]').val();
         if (!assignedUsers || assignedUsers.length === 0) {
-            showAlert('warning', 'Please assign at least one user');
+            e.preventDefault();
+            alert('Please assign at least one user to this task.');
             return false;
         }
-        
-        // Submit form
-        $.ajax({
-            url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
-            type: 'POST',
-            data: $(this).serialize() + '&action=update',
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    showAlert('success', response.message);
-                    setTimeout(function() {
-                        window.location.href = '<?php echo BASE_URL; ?>pages/todos/view_todo.php?id=<?php echo $todoId; ?>';
-                    }, 1500);
-                } else {
-                    showAlert('danger', response.message);
-                }
-            },
-            error: function(xhr) {
-                showAlert('danger', xhr.responseJSON?.message || 'Error updating task');
-            }
-        });
     });
-    
-    // Set minimum date to today
-    const today = new Date().toISOString().split('T')[0];
-    $('input[name="deadline_date"]').attr('min', today);
 });
 </script>
 

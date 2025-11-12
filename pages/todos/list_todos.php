@@ -1,6 +1,7 @@
 <?php
-// File: pages/todos/list_todos.php
-// Purpose: Task board with tabs, search, filters, and drag-drop reordering
+// Folder: pages/todos/
+// File: list_todos.php
+// Purpose: Main task board with tabs, search, filter, and drag-and-drop reordering
 
 define('ROOT_PATH', dirname(dirname(__DIR__)) . '/');
 $pageTitle = 'Task Management';
@@ -8,7 +9,24 @@ $pageTitle = 'Task Management';
 require_once ROOT_PATH . 'layouts/header.php';
 requireLogin();
 
-// Get all active users for assignment dropdown
+$userId = getCurrentUserId();
+
+// Get task counts for tabs
+$stmt = $pdo->prepare("
+    SELECT 
+        COUNT(CASE WHEN status NOT IN ('Completed', 'Cancelled') THEN 1 END) as all_count,
+        COUNT(CASE WHEN created_by = ? THEN 1 END) as assigned_count,
+        COUNT(CASE WHEN status = 'Ongoing' THEN 1 END) as ongoing_count,
+        COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending_count,
+        COUNT(CASE WHEN status = 'Completed' THEN 1 END) as completed_count,
+        COUNT(CASE WHEN status = 'Cancelled' THEN 1 END) as cancelled_count
+    FROM todos t
+    LEFT JOIN todo_assignments ta ON t.id = ta.todo_id AND ta.user_id = ?
+");
+$stmt->execute([$userId, $userId]);
+$taskCounts = $stmt->fetch();
+
+// Get all active users for assignment
 $usersStmt = $pdo->query("SELECT id, first_name, last_name, employee_id FROM users WHERE status = 'Active' ORDER BY first_name");
 $allUsers = $usersStmt->fetchAll();
 ?>
@@ -28,53 +46,53 @@ $allUsers = $usersStmt->fetchAll();
     <div id="alert-container"></div>
 
     <!-- Task Tabs -->
-    <ul class="nav nav-tabs mb-3" id="taskTabs" role="tablist">
+    <ul class="nav nav-tabs mb-4" id="taskTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" 
-                    type="button" role="tab" data-tab="all">
-                All <span class="badge bg-secondary" id="count-all">0</span>
+                    type="button" role="tab" data-filter="all">
+                All <span class="badge bg-secondary ms-1"><?php echo $taskCounts['all_count']; ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="assigned-tab" data-bs-toggle="tab" data-bs-target="#assigned" 
-                    type="button" role="tab" data-tab="assigned">
-                Assigned <span class="badge bg-primary" id="count-assigned">0</span>
+                    type="button" role="tab" data-filter="assigned">
+                Assigned <span class="badge bg-info ms-1"><?php echo $taskCounts['assigned_count']; ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="ongoing-tab" data-bs-toggle="tab" data-bs-target="#ongoing" 
-                    type="button" role="tab" data-tab="ongoing">
-                Ongoing <span class="badge bg-warning" id="count-ongoing">0</span>
+                    type="button" role="tab" data-filter="ongoing">
+                Ongoing <span class="badge bg-warning ms-1"><?php echo $taskCounts['ongoing_count']; ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" 
-                    type="button" role="tab" data-tab="pending">
-                Pending <span class="badge bg-danger" id="count-pending">0</span>
+                    type="button" role="tab" data-filter="pending">
+                Pending <span class="badge bg-danger ms-1"><?php echo $taskCounts['pending_count']; ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" 
-                    type="button" role="tab" data-tab="completed">
-                Completed <span class="badge bg-success" id="count-completed">0</span>
+                    type="button" role="tab" data-filter="completed">
+                Completed <span class="badge bg-success ms-1"><?php echo $taskCounts['completed_count']; ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled" 
-                    type="button" role="tab" data-tab="cancelled">
-                Cancelled <span class="badge bg-secondary" id="count-cancelled">0</span>
+                    type="button" role="tab" data-filter="cancelled">
+                Cancelled <span class="badge bg-secondary ms-1"><?php echo $taskCounts['cancelled_count']; ?></span>
             </button>
         </li>
     </ul>
 
-    <!-- Search and Filters -->
-    <div class="card mb-3">
+    <!-- Search and Filter -->
+    <div class="card mb-4">
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-4">
-                    <input type="text" class="form-control" id="searchTasks" placeholder="Search tasks...">
+                    <input type="text" class="form-control" id="searchTasks" placeholder="Search by title, tag, or description...">
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <select class="form-select" id="filterPriority">
                         <option value="">All Priorities</option>
                         <option value="Low">Low</option>
@@ -83,35 +101,31 @@ $allUsers = $usersStmt->fetchAll();
                         <option value="Urgent">Urgent</option>
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <input type="date" class="form-control" id="filterDate" placeholder="Filter by date">
-                </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <select class="form-select" id="sortBy">
-                        <option value="deadline_date">Sort by Deadline</option>
-                        <option value="created_at">Sort by Created</option>
+                        <option value="deadline">Sort by Deadline</option>
+                        <option value="created">Sort by Created Date</option>
                         <option value="priority">Sort by Priority</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select" id="sortOrder">
-                        <option value="ASC">Ascending</option>
-                        <option value="DESC">Descending</option>
-                    </select>
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="applyFilters()">
+                        <i class="bi bi-funnel me-1"></i>Apply
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Task List Container -->
-    <div class="tab-content" id="taskTabContent">
-        <div class="tab-pane fade show active" id="all" role="tabpanel">
-            <div id="taskList" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-                <!-- Tasks will be loaded here via AJAX -->
+    <div class="tab-content" id="taskTabsContent">
+        <div class="tab-pane fade show active" id="taskListContainer" role="tabpanel">
+            <div id="tasksList" class="row">
                 <div class="col-12 text-center py-5">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
+                    <p class="text-muted mt-2">Loading tasks...</p>
                 </div>
             </div>
         </div>
@@ -135,11 +149,11 @@ $allUsers = $usersStmt->fetchAll();
                         </div>
                         <div class="col-12">
                             <label class="form-label">Description</label>
-                            <textarea class="form-control" name="description" rows="3"></textarea>
+                            <textarea class="form-control" name="description" rows="3" placeholder="Describe the task..."></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Tags</label>
-                            <input type="text" class="form-control" name="tags" placeholder="e.g., urgent, hardware">
+                            <label class="form-label">Tags (comma separated)</label>
+                            <input type="text" class="form-control" name="tags" placeholder="e.g., urgent, hardware, network">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Priority <span class="text-danger">*</span></label>
@@ -160,11 +174,11 @@ $allUsers = $usersStmt->fetchAll();
                         </div>
                         <div class="col-12">
                             <label class="form-label">Assign To <span class="text-danger">*</span></label>
-                            <select class="form-select" name="assigned_users[]" multiple size="6" required>
+                            <select class="form-select" name="assigned_users[]" multiple size="5" required>
                                 <?php foreach ($allUsers as $user): ?>
-                                    <option value="<?php echo $user['id']; ?>">
-                                        <?php echo htmlspecialchars($user['first_name'] . ' ' . ($user['last_name'] ?? '') . ' (' . $user['employee_id'] . ')'); ?>
-                                    </option>
+                                <option value="<?php echo $user['id']; ?>">
+                                    <?php echo htmlspecialchars($user['first_name'] . ' ' . ($user['last_name'] ?? '') . ' (' . $user['employee_id'] . ')'); ?>
+                                </option>
                                 <?php endforeach; ?>
                             </select>
                             <small class="text-muted">Hold Ctrl/Cmd to select multiple users</small>
@@ -180,275 +194,443 @@ $allUsers = $usersStmt->fetchAll();
     </div>
 </div>
 
-<!-- View Task Modal -->
-<div class="modal fade" id="viewTaskModal" tabindex="-1">
+<!-- Edit Task Modal -->
+<div class="modal fade" id="editTaskModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="viewTaskTitle">Task Details</h5>
+                <h5 class="modal-title">Edit Task</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="viewTaskContent">
-                <!-- Content loaded via AJAX -->
-            </div>
+            <form id="editTaskForm">
+                <input type="hidden" name="todo_id" id="edit_todo_id">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="title" id="edit_title" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" name="description" id="edit_description" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tags (comma separated)</label>
+                            <input type="text" class="form-control" name="tags" id="edit_tags">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Priority <span class="text-danger">*</span></label>
+                            <select class="form-select" name="priority" id="edit_priority" required>
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                                <option value="Urgent">Urgent</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Deadline Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="deadline_date" id="edit_deadline_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Deadline Time <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" name="deadline_time" id="edit_deadline_time" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Assign To <span class="text-danger">*</span></label>
+                            <select class="form-select" name="assigned_users[]" id="edit_assigned_users" multiple size="5" required>
+                                <?php foreach ($allUsers as $user): ?>
+                                <option value="<?php echo $user['id']; ?>">
+                                    <?php echo htmlspecialchars($user['first_name'] . ' ' . ($user['last_name'] ?? '') . ' (' . $user['employee_id'] . ')'); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small class="text-muted">Hold Ctrl/Cmd to select multiple users</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Task</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-<style>
-.task-card {
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 15px;
-    background: white;
-    cursor: move;
-    transition: all 0.3s;
-}
-.task-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
-}
-.task-card.dragging {
-    opacity: 0.5;
-}
-.priority-low { border-left: 4px solid #6c757d; }
-.priority-medium { border-left: 4px solid #17a2b8; }
-.priority-high { border-left: 4px solid #ffc107; }
-.priority-urgent { border-left: 4px solid #dc3545; }
-</style>
-
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
-let currentTab = 'all';
-let sortable = null;
+let currentFilter = 'all';
+let allTasksData = [];
 
 $(document).ready(function() {
-    // Load tasks on page load
-    loadTasks();
+    // Set minimum date to today for deadline
+    const today = new Date().toISOString().split('T')[0];
+    $('input[name="deadline_date"]').attr('min', today);
     
-    // Tab change
-    $('[data-tab]').on('click', function() {
-        currentTab = $(this).data('tab');
-        loadTasks();
+    loadTasks('all');
+    
+    // Tab switching
+    $('[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+        currentFilter = $(e.target).data('filter');
+        loadTasks(currentFilter);
     });
     
-    // Search with debounce
-    let searchTimeout;
-    $('#searchTasks').on('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(loadTasks, 500);
-    });
-    
-    // Filter changes
-    $('#filterPriority, #filterDate, #sortBy, #sortOrder').on('change', loadTasks);
-    
-    // Add task form submit
-    $('#addTaskForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        $.ajax({
-            url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
-            type: 'POST',
-            data: $(this).serialize() + '&action=add',
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    $('#addTaskModal').modal('hide');
-                    $('#addTaskForm')[0].reset();
-                    showAlert('success', response.message);
-                    loadTasks();
-                } else {
-                    showAlert('danger', response.message);
-                }
-            },
-            error: function(xhr) {
-                showAlert('danger', xhr.responseJSON?.message || 'Error creating task');
-            }
-        });
-    });
+    // Search on input
+    $('#searchTasks').on('input', debounce(function() {
+        filterTasks();
+    }, 300));
 });
 
-function loadTasks() {
-    const search = $('#searchTasks').val();
-    const priority = $('#filterPriority').val();
-    const dateFilter = $('#filterDate').val();
-    const sortBy = $('#sortBy').val();
-    const sortOrder = $('#sortOrder').val();
-    
+// Load tasks from server
+function loadTasks(filter) {
     $.ajax({
         url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
         type: 'GET',
-        data: {
-            action: 'get_tasks',
-            tab: currentTab,
-            search: search,
-            priority: priority,
-            date_filter: dateFilter,
-            sort_by: sortBy,
-            sort_order: sortOrder
-        },
+        data: { action: 'get_tasks', filter: filter },
         dataType: 'json',
         success: function(response) {
             if (response.success) {
-                renderTasks(response.tasks);
-                updateCounts(response.counts);
-                initSortable();
+                allTasksData = response.tasks;
+                displayTasks(response.tasks);
             }
         },
         error: function() {
-            $('#taskList').html('<div class="col-12"><div class="alert alert-danger">Error loading tasks</div></div>');
+            $('#tasksList').html('<div class="col-12"><div class="alert alert-danger">Failed to load tasks</div></div>');
         }
     });
 }
 
-function renderTasks(tasks) {
-    let html = '';
-    
+// Display tasks as cards
+function displayTasks(tasks) {
     if (tasks.length === 0) {
-        html = '<div class="col-12 text-center text-muted py-5"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No tasks found</div>';
-    } else {
-        tasks.forEach(function(task) {
-            const priorityClass = 'priority-' + task.priority.toLowerCase();
-            const statusBadge = getStatusBadge(task.status);
-            const deadline = new Date(task.deadline_date + ' ' + task.deadline_time);
-            const isOverdue = deadline < new Date() && task.status !== 'Completed';
-            
-            html += `
-                <div class="col" data-task-id="${task.id}">
-                    <div class="task-card ${priorityClass}">
+        $('#tasksList').html('<div class="col-12 text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No tasks found</div>');
+        return;
+    }
+    
+    let html = '';
+    tasks.forEach(function(task) {
+        const priorityClass = 'priority-' + task.priority.toLowerCase();
+        const statusClass = 'status-' + task.status.toLowerCase();
+        const deadline = new Date(task.deadline_date + ' ' + task.deadline_time);
+        const now = new Date();
+        const isOverdue = deadline < now && task.status !== 'Completed' && task.status !== 'Cancelled';
+        
+        html += `
+            <div class="col-md-6 col-lg-4 mb-3 task-card" data-task-id="${task.id}" data-priority="${task.priority}" data-created="${task.created_at}">
+                <div class="card h-100 ${isOverdue ? 'border-danger border-2' : ''}">
+                    <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="mb-0">${escapeHtml(task.title)}</h6>
-                            <span class="badge ${statusBadge.class}">${statusBadge.text}</span>
+                            <h6 class="card-title mb-0 flex-grow-1">${escapeHtml(task.title)}</h6>
+                            <span class="badge ${priorityClass} ms-2">${task.priority}</span>
                         </div>
-                        ${task.description ? '<p class="text-muted small mb-2">' + escapeHtml(task.description.substring(0, 100)) + (task.description.length > 100 ? '...' : '') + '</p>' : ''}
-                        <div class="d-flex justify-content-between align-items-center text-small">
-                            <div>
-                                <i class="bi bi-flag-fill me-1"></i>
-                                <span class="badge priority-${task.priority.toLowerCase()}">${task.priority}</span>
-                            </div>
-                            <div class="${isOverdue ? 'text-danger' : ''}">
-                                <i class="bi bi-clock me-1"></i>
-                                ${formatDeadline(deadline)}
-                            </div>
-                        </div>
-                        <div class="mt-2 pt-2 border-top">
+                        ${task.description ? `<p class="card-text small text-muted mb-2">${escapeHtml(task.description).substring(0, 100)}${task.description.length > 100 ? '...' : ''}</p>` : ''}
+                        ${task.tags ? `<div class="mb-2">${task.tags.split(',').map(t => '<span class="badge bg-secondary me-1 small">' + escapeHtml(t.trim()) + '</span>').join('')}</div>` : ''}
+                        <div class="mb-2">
                             <small class="text-muted">
-                                <i class="bi bi-person me-1"></i>${escapeHtml(task.assigned_to || 'Unassigned')}
+                                <i class="bi bi-calendar me-1"></i>${formatDateTime(task.deadline_date + ' ' + task.deadline_time)}
                             </small>
+                            ${isOverdue ? '<span class="badge bg-danger ms-2 small">OVERDUE</span>' : ''}
                         </div>
-                        <div class="mt-2 d-flex gap-1">
-                            <button class="btn btn-sm btn-outline-primary" onclick="viewTask(${task.id})">
-                                <i class="bi bi-eye"></i> View
-                            </button>
-                            <button class="btn btn-sm btn-outline-success" onclick="changeStatus(${task.id}, 'Ongoing')" ${task.status === 'Ongoing' ? 'disabled' : ''}>
-                                <i class="bi bi-play-fill"></i> Start
-                            </button>
-                            ${task.status === 'Ongoing' ? `<button class="btn btn-sm btn-outline-success" onclick="changeStatus(${task.id}, 'Completed')"><i class="bi bi-check-circle"></i> Complete</button>` : ''}
-                            <button class="btn btn-sm btn-outline-danger" onclick="changeStatus(${task.id}, 'Cancelled')">
-                                <i class="bi bi-x-circle"></i> Cancel
-                            </button>
+                        <div class="mb-2">
+                            <small class="text-muted d-block"><i class="bi bi-person me-1"></i><strong>Assigned:</strong> ${escapeHtml(task.assigned_to_names || 'None')}</small>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge ${statusClass}">${task.status}</span>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="viewTask(${task.id})" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                ${canChangeStatus(task) ? `
+                                    <button class="btn btn-outline-success" onclick="changeStatus(${task.id}, '${getNextStatus(task.status)}')" title="${getNextStatus(task.status)}">
+                                        <i class="bi bi-${getStatusIcon(getNextStatus(task.status))}"></i>
+                                    </button>
+                                ` : ''}
+                                ${canEdit(task) ? `
+                                    <button class="btn btn-outline-warning" onclick="editTask(${task.id})" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                ` : ''}
+                                ${canDelete(task) ? `
+                                    <button class="btn btn-outline-danger" onclick="deleteTask(${task.id}, '${escapeHtml(task.title)}')" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
                         </div>
                     </div>
                 </div>
-            `;
+            </div>
+        `;
+    });
+    
+    $('#tasksList').html(html);
+    
+    // Enable drag and drop for reordering (only on All and Assigned tabs)
+    if (currentFilter === 'all' || currentFilter === 'assigned') {
+        new Sortable(document.getElementById('tasksList'), {
+            animation: 150,
+            handle: '.card',
+            ghostClass: 'opacity-50',
+            onEnd: function(evt) {
+                reorderTasks();
+            }
         });
     }
+}
+
+// Filter tasks based on search and filters
+function filterTasks() {
+    const searchTerm = $('#searchTasks').val().toLowerCase();
+    const priorityFilter = $('#filterPriority').val();
     
-    $('#taskList').html(html);
-}
-
-function updateCounts(counts) {
-    $('#count-all').text(counts.all_count);
-    $('#count-assigned').text(counts.assigned_count);
-    $('#count-ongoing').text(counts.ongoing_count);
-    $('#count-pending').text(counts.pending_count);
-    $('#count-completed').text(counts.completed_count);
-    $('#count-cancelled').text(counts.cancelled_count);
-}
-
-function getStatusBadge(status) {
-    const badges = {
-        'Assigned': { class: 'bg-primary', text: 'Assigned' },
-        'Ongoing': { class: 'bg-warning', text: 'Ongoing' },
-        'Pending': { class: 'bg-danger', text: 'Pending' },
-        'Completed': { class: 'bg-success', text: 'Completed' },
-        'Cancelled': { class: 'bg-secondary', text: 'Cancelled' }
-    };
-    return badges[status] || badges['Assigned'];
-}
-
-function formatDeadline(date) {
-    const now = new Date();
-    const diff = date - now;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    let filtered = allTasksData.filter(task => {
+        let matchesSearch = true;
+        let matchesPriority = true;
+        
+        if (searchTerm) {
+            matchesSearch = task.title.toLowerCase().includes(searchTerm) ||
+                           (task.description && task.description.toLowerCase().includes(searchTerm)) ||
+                           (task.tags && task.tags.toLowerCase().includes(searchTerm));
+        }
+        
+        if (priorityFilter) {
+            matchesPriority = task.priority === priorityFilter;
+        }
+        
+        return matchesSearch && matchesPriority;
+    });
     
-    if (diff < 0) return 'Overdue';
-    if (days === 0) return `${hours}h remaining`;
-    return `${days}d ${hours}h`;
+    displayTasks(filtered);
 }
 
-function viewTask(taskId) {
-    window.open('<?php echo BASE_URL; ?>pages/todos/view_todo.php?id=' + taskId, '_blank');
-}
-
-function changeStatus(taskId, newStatus) {
-    if (!confirm(`Are you sure you want to change task status to "${newStatus}"?`)) {
-        return;
+// Apply filters and sorting
+function applyFilters() {
+    const sortBy = $('#sortBy').val();
+    
+    let sorted = [...allTasksData];
+    
+    if (sortBy === 'deadline') {
+        sorted.sort((a, b) => new Date(a.deadline_date + ' ' + a.deadline_time) - new Date(b.deadline_date + ' ' + b.deadline_time));
+    } else if (sortBy === 'created') {
+        sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    } else if (sortBy === 'priority') {
+        const priorityOrder = { 'Urgent': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
+        sorted.sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority]);
     }
+    
+    allTasksData = sorted;
+    filterTasks();
+}
+
+// Add task
+$('#addTaskForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    const submitBtn = $(this).find('button[type="submit"]');
+    submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Creating...');
     
     $.ajax({
         url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
         type: 'POST',
-        data: {
-            action: 'update_status',
-            todo_id: taskId,
-            status: newStatus
-        },
+        data: $(this).serialize() + '&action=add',
         dataType: 'json',
         success: function(response) {
             if (response.success) {
+                $('#addTaskModal').modal('hide');
+                $('#addTaskForm')[0].reset();
                 showAlert('success', response.message);
-                loadTasks();
-            } else {
-                showAlert('danger', response.message);
+                setTimeout(() => location.reload(), 1500);
             }
         },
         error: function(xhr) {
-            showAlert('danger', xhr.responseJSON?.message || 'Error updating status');
+            showAlert('danger', xhr.responseJSON?.message || 'Error creating task');
+            submitBtn.prop('disabled', false).html('Create Task');
+        }
+    });
+});
+
+// Edit task - load data
+function editTask(taskId) {
+    const task = allTasksData.find(t => t.id == taskId);
+    if (!task) return;
+    
+    // Get assigned user IDs
+    $.ajax({
+        url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
+        type: 'GET',
+        data: { action: 'get_task_details', todo_id: taskId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                $('#edit_todo_id').val(task.id);
+                $('#edit_title').val(task.title);
+                $('#edit_description').val(task.description || '');
+                $('#edit_tags').val(task.tags || '');
+                $('#edit_priority').val(task.priority);
+                $('#edit_deadline_date').val(task.deadline_date);
+                $('#edit_deadline_time').val(task.deadline_time);
+                
+                // Select assigned users
+                $('#edit_assigned_users').val(response.assigned_user_ids);
+                
+                $('#editTaskModal').modal('show');
+            }
         }
     });
 }
 
-function initSortable() {
-    if (sortable) {
-        sortable.destroy();
-    }
+// Update task
+$('#editTaskForm').on('submit', function(e) {
+    e.preventDefault();
     
-    const taskList = document.getElementById('taskList');
-    if (taskList && currentTab === 'all') {
-        sortable = new Sortable(taskList, {
-            animation: 150,
-            ghostClass: 'dragging',
-            onEnd: function(evt) {
-                const orderedIds = [];
-                $('#taskList .col').each(function(index) {
-                    orderedIds.push($(this).data('task-id'));
-                });
-                
-                $.post('<?php echo BASE_URL; ?>ajax/todo_operations.php', {
-                    action: 'update_order',
-                    ordered_ids: orderedIds
-                });
+    const submitBtn = $(this).find('button[type="submit"]');
+    submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Updating...');
+    
+    $.ajax({
+        url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
+        type: 'POST',
+        data: $(this).serialize() + '&action=update',
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                $('#editTaskModal').modal('hide');
+                showAlert('success', response.message);
+                loadTasks(currentFilter);
             }
-        });
-    }
+        },
+        error: function(xhr) {
+            showAlert('danger', xhr.responseJSON?.message || 'Error updating task');
+            submitBtn.prop('disabled', false).html('Update Task');
+        }
+    });
+});
+
+// View task in new tab
+function viewTask(taskId) {
+    window.open('<?php echo BASE_URL; ?>pages/todos/view_todo.php?id=' + taskId, '_blank');
+}
+
+// Change status
+function changeStatus(taskId, newStatus) {
+    if (!confirm('Change task status to ' + newStatus + '?')) return;
+    
+    $.ajax({
+        url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
+        type: 'POST',
+        data: { action: 'change_status', todo_id: taskId, status: newStatus },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                showAlert('success', response.message);
+                loadTasks(currentFilter);
+            }
+        },
+        error: function(xhr) {
+            showAlert('danger', xhr.responseJSON?.message || 'Error changing status');
+        }
+    });
+}
+
+// Delete task
+function deleteTask(taskId, title) {
+    if (!confirm('Are you sure you want to delete task "' + title + '"?\n\nThis action cannot be undone.')) return;
+    
+    $.ajax({
+        url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
+        type: 'POST',
+        data: { action: 'delete', todo_id: taskId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                showAlert('success', response.message);
+                loadTasks(currentFilter);
+            }
+        },
+        error: function(xhr) {
+            showAlert('danger', xhr.responseJSON?.message || 'Error deleting task');
+        }
+    });
+}
+
+// Reorder tasks (drag and drop)
+function reorderTasks() {
+    const orderedIds = [];
+    $('.task-card').each(function() {
+        orderedIds.push($(this).data('task-id'));
+    });
+    
+    $.ajax({
+        url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
+        type: 'POST',
+        data: { action: 'reorder', ordered_ids: orderedIds },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                // Silent success
+            }
+        }
+    });
+}
+
+// Helper functions
+function canChangeStatus(task) {
+    return task.status !== 'Completed' && task.status !== 'Cancelled';
+}
+
+function canEdit(task) {
+    return task.created_by == <?php echo getCurrentUserId(); ?> || <?php echo isAdmin() ? 'true' : 'false'; ?>;
+}
+
+function canDelete(task) {
+    return task.created_by == <?php echo getCurrentUserId(); ?> || <?php echo isAdmin() ? 'true' : 'false'; ?>;
+}
+
+function getNextStatus(currentStatus) {
+    const statusFlow = {
+        'Assigned': 'Ongoing',
+        'Ongoing': 'Completed',
+        'Pending': 'Ongoing'
+    };
+    return statusFlow[currentStatus] || 'Completed';
+}
+
+function getStatusIcon(status) {
+    const icons = {
+        'Ongoing': 'play-circle',
+        'Completed': 'check-circle',
+        'Cancelled': 'x-circle'
+    };
+    return icons[status] || 'check';
+}
+
+function formatDateTime(datetime) {
+    const date = new Date(datetime);
+    return date.toLocaleString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
 }
 
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
 </script>
 
