@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AJAX Test</title>
+    <link href="../../assets/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; font-family: monospace; }
+        .result { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { border-left: 4px solid green; }
+        .error { border-left: 4px solid red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AJAX Connection Test</h1>
+        
+        <div class="mb-3">
+            <button class="btn btn-primary" onclick="testBasicAjax()">1. Test Basic AJAX</button>
+            <button class="btn btn-success" onclick="testGetTodos()">2. Test Get Todos</button>
+            <button class="btn btn-info" onclick="testTodoOperations()">3. Test Todo Operations Endpoint</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script src="../../assets/js/jquery-3.6.0.min.js"></script>
+    <script>
+        function addResult(title, data, isError = false) {
+            const resultDiv = $('<div class="result ' + (isError ? 'error' : 'success') + '"></div>');
+            resultDiv.append('<h5>' + title + '</h5>');
+            resultDiv.append('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+            $('#results').prepend(resultDiv);
+        }
+
+        function testBasicAjax() {
+            $.ajax({
+                url: '../../ajax/test_ajax.php',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    addResult('✓ Basic AJAX Test', response);
+                },
+                error: function(xhr, status, error) {
+                    addResult('✗ Basic AJAX Test Failed', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        error: error,
+                        response: xhr.responseText
+                    }, true);
+                }
+            });
+        }
+
+        function testGetTodos() {
+            $.ajax({
+                url: '../../ajax/test_ajax.php?action=get_todos',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    addResult('✓ Get Todos Test', response);
+                },
+                error: function(xhr, status, error) {
+                    addResult('✗ Get Todos Failed', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        error: error,
+                        response: xhr.responseText
+                    }, true);
+                }
+            });
+        }
+
+        function testTodoOperations() {
+            $.ajax({
+                url: '../../ajax/todo_operations.php?action=get_tasks&filter=all',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    addResult('✓ Todo Operations Test', response);
+                },
+                error: function(xhr, status, error) {
+                    addResult('✗ Todo Operations Failed', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        error: error,
+                        response: xhr.responseText
+                    }, true);
+                }
+            });
+        }
+
+        // Run automatic test on load
+        $(document).ready(function() {
+            setTimeout(function() {
+                testBasicAjax();
+                setTimeout(function() {
+                    testGetTodos();
+                    setTimeout(function() {
+                        testTodoOperations();
+                    }, 500);
+                }, 500);
+            }, 500);
+        });
+    </script>
+</body>
+</html>

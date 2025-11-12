@@ -225,25 +225,42 @@ try {
             
             switch ($filter) {
                 case 'assigned':
+                    // Tasks created by current user
                     $where[] = "t.created_by = ?";
                     $params[] = $userId;
                     break;
+                    
                 case 'ongoing':
+                    // Tasks in Ongoing status that are assigned to current user
                     $where[] = "t.status = 'Ongoing'";
                     $where[] = "EXISTS (SELECT 1 FROM todo_assignments ta WHERE ta.todo_id = t.id AND ta.user_id = ?)";
                     $params[] = $userId;
                     break;
+                    
                 case 'pending':
+                    // All pending tasks
                     $where[] = "t.status = 'Pending'";
                     break;
+                    
                 case 'completed':
+                    // All completed tasks
                     $where[] = "t.status = 'Completed'";
                     break;
+                    
                 case 'cancelled':
+                    // All cancelled tasks
                     $where[] = "t.status = 'Cancelled'";
                     break;
+                    
                 default: // all
-                    $where[] = "t.status NOT IN ('Completed', 'Cancelled')";
+                    // Show all active tasks (not completed or cancelled)
+                    // OR tasks where current user is assigned
+                    // OR tasks created by current user
+                    $where[] = "(t.status NOT IN ('Completed', 'Cancelled') 
+                                OR EXISTS (SELECT 1 FROM todo_assignments ta WHERE ta.todo_id = t.id AND ta.user_id = ?)
+                                OR t.created_by = ?)";
+                    $params[] = $userId;
+                    $params[] = $userId;
             }
             
             $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';

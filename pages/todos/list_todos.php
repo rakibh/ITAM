@@ -14,14 +14,13 @@ $userId = getCurrentUserId();
 // Get task counts for tabs
 $stmt = $pdo->prepare("
     SELECT 
-        COUNT(CASE WHEN status NOT IN ('Completed', 'Cancelled') THEN 1 END) as all_count,
-        COUNT(CASE WHEN created_by = ? THEN 1 END) as assigned_count,
-        COUNT(CASE WHEN status = 'Ongoing' THEN 1 END) as ongoing_count,
-        COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending_count,
-        COUNT(CASE WHEN status = 'Completed' THEN 1 END) as completed_count,
-        COUNT(CASE WHEN status = 'Cancelled' THEN 1 END) as cancelled_count
+        COUNT(CASE WHEN t.status NOT IN ('Completed', 'Cancelled') THEN 1 END) as all_count,
+        COUNT(CASE WHEN t.created_by = ? THEN 1 END) as assigned_count,
+        COUNT(CASE WHEN t.status = 'Ongoing' AND EXISTS (SELECT 1 FROM todo_assignments ta WHERE ta.todo_id = t.id AND ta.user_id = ?) THEN 1 END) as ongoing_count,
+        COUNT(CASE WHEN t.status = 'Pending' THEN 1 END) as pending_count,
+        COUNT(CASE WHEN t.status = 'Completed' THEN 1 END) as completed_count,
+        COUNT(CASE WHEN t.status = 'Cancelled' THEN 1 END) as cancelled_count
     FROM todos t
-    LEFT JOIN todo_assignments ta ON t.id = ta.todo_id AND ta.user_id = ?
 ");
 $stmt->execute([$userId, $userId]);
 $taskCounts = $stmt->fetch();
@@ -257,7 +256,6 @@ $allUsers = $usersStmt->fetchAll();
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 let currentFilter = 'all';
 let allTasksData = [];
@@ -289,13 +287,17 @@ function loadTasks(filter) {
         data: { action: 'get_tasks', filter: filter },
         dataType: 'json',
         success: function(response) {
+            console.log('Tasks loaded:', response); // Debug log
             if (response.success) {
                 allTasksData = response.tasks;
                 displayTasks(response.tasks);
+            } else {
+                $('#tasksList').html('<div class="col-12"><div class="alert alert-warning">' + (response.message || 'No tasks found') + '</div></div>');
             }
         },
-        error: function() {
-            $('#tasksList').html('<div class="col-12"><div class="alert alert-danger">Failed to load tasks</div></div>');
+        error: function(xhr, status, error) {
+            console.error('Load tasks error:', xhr, status, error); // Debug log
+            $('#tasksList').html('<div class="col-12"><div class="alert alert-danger">Failed to load tasks. Please refresh the page.</div></div>');
         }
     });
 }
@@ -365,17 +367,8 @@ function displayTasks(tasks) {
     
     $('#tasksList').html(html);
     
-    // Enable drag and drop for reordering (only on All and Assigned tabs)
-    if (currentFilter === 'all' || currentFilter === 'assigned') {
-        new Sortable(document.getElementById('tasksList'), {
-            animation: 150,
-            handle: '.card',
-            ghostClass: 'opacity-50',
-            onEnd: function(evt) {
-                reorderTasks();
-            }
-        });
-    }
+    // Note: Drag-and-drop reordering disabled due to browser tracking prevention
+    // You can enable it by downloading SortableJS locally and hosting it
 }
 
 // Filter tasks based on search and filters
@@ -432,7 +425,7 @@ $('#addTaskForm').on('submit', function(e) {
     $.ajax({
         url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
         type: 'POST',
-        data: $(this).serialize() + '&action=add',
+        data: $(this).serialize() + '&action=add&csrf_token=<?php echo getCsrfToken(); ?>',
         dataType: 'json',
         success: function(response) {
             if (response.success) {
@@ -440,10 +433,15 @@ $('#addTaskForm').on('submit', function(e) {
                 $('#addTaskForm')[0].reset();
                 showAlert('success', response.message);
                 setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('danger', response.message || 'Error creating task');
+                submitBtn.prop('disabled', false).html('Create Task');
             }
         },
         error: function(xhr) {
-            showAlert('danger', xhr.responseJSON?.message || 'Error creating task');
+            console.error('AJAX Error:', xhr);
+            const errorMsg = xhr.responseJSON?.message || xhr.statusText || 'Error creating task';
+            showAlert('danger', errorMsg);
             submitBtn.prop('disabled', false).html('Create Task');
         }
     });
@@ -489,16 +487,20 @@ $('#editTaskForm').on('submit', function(e) {
     $.ajax({
         url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
         type: 'POST',
-        data: $(this).serialize() + '&action=update',
+        data: $(this).serialize() + '&action=update&csrf_token=<?php echo getCsrfToken(); ?>',
         dataType: 'json',
         success: function(response) {
             if (response.success) {
                 $('#editTaskModal').modal('hide');
                 showAlert('success', response.message);
                 loadTasks(currentFilter);
+            } else {
+                showAlert('danger', response.message || 'Error updating task');
+                submitBtn.prop('disabled', false).html('Update Task');
             }
         },
         error: function(xhr) {
+            console.error('AJAX Error:', xhr);
             showAlert('danger', xhr.responseJSON?.message || 'Error updating task');
             submitBtn.prop('disabled', false).html('Update Task');
         }
@@ -517,15 +519,23 @@ function changeStatus(taskId, newStatus) {
     $.ajax({
         url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
         type: 'POST',
-        data: { action: 'change_status', todo_id: taskId, status: newStatus },
+        data: { 
+            action: 'change_status', 
+            todo_id: taskId, 
+            status: newStatus,
+            csrf_token: '<?php echo getCsrfToken(); ?>'
+        },
         dataType: 'json',
         success: function(response) {
             if (response.success) {
                 showAlert('success', response.message);
                 loadTasks(currentFilter);
+            } else {
+                showAlert('danger', response.message || 'Error changing status');
             }
         },
         error: function(xhr) {
+            console.error('AJAX Error:', xhr);
             showAlert('danger', xhr.responseJSON?.message || 'Error changing status');
         }
     });
@@ -538,15 +548,22 @@ function deleteTask(taskId, title) {
     $.ajax({
         url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
         type: 'POST',
-        data: { action: 'delete', todo_id: taskId },
+        data: { 
+            action: 'delete', 
+            todo_id: taskId,
+            csrf_token: '<?php echo getCsrfToken(); ?>'
+        },
         dataType: 'json',
         success: function(response) {
             if (response.success) {
                 showAlert('success', response.message);
                 loadTasks(currentFilter);
+            } else {
+                showAlert('danger', response.message || 'Error deleting task');
             }
         },
         error: function(xhr) {
+            console.error('AJAX Error:', xhr);
             showAlert('danger', xhr.responseJSON?.message || 'Error deleting task');
         }
     });
@@ -562,7 +579,11 @@ function reorderTasks() {
     $.ajax({
         url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
         type: 'POST',
-        data: { action: 'reorder', ordered_ids: orderedIds },
+        data: { 
+            action: 'reorder', 
+            ordered_ids: orderedIds,
+            csrf_token: '<?php echo getCsrfToken(); ?>'
+        },
         dataType: 'json',
         success: function(response) {
             if (response.success) {

@@ -336,3 +336,11 @@
 [12-Nov-2025 00:18:44 Asia/Dhaka] PHP Stack trace:
 [12-Nov-2025 00:18:44 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\itam\pages\equipment\add_equipment.php:0
 [12-Nov-2025 00:18:44 Asia/Dhaka] PHP   2. header($header = 'Location: view_equipment.php?id=2') C:\wamp64\www\it-claud\itam\pages\equipment\add_equipment.php:194
+[12-Nov-2025 23:59:27 Asia/Dhaka] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\wamp64\www\it-claud\itam\layouts\header.php:49) in C:\wamp64\www\it-claud\itam\pages\users\edit_user.php on line 130
+[12-Nov-2025 23:59:27 Asia/Dhaka] PHP Stack trace:
+[12-Nov-2025 23:59:27 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\itam\pages\users\edit_user.php:0
+[12-Nov-2025 23:59:27 Asia/Dhaka] PHP   2. header($header = 'Location: view_user.php?id=3') C:\wamp64\www\it-claud\itam\pages\users\edit_user.php:130
+[13-Nov-2025 00:06:14 Asia/Dhaka] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\wamp64\www\it-claud\itam\layouts\header.php:49) in C:\wamp64\www\it-claud\itam\pages\users\edit_user.php on line 130
+[13-Nov-2025 00:06:14 Asia/Dhaka] PHP Stack trace:
+[13-Nov-2025 00:06:14 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\itam\pages\users\edit_user.php:0
+[13-Nov-2025 00:06:14 Asia/Dhaka] PHP   2. header($header = 'Location: profile.php') C:\wamp64\www\it-claud\itam\pages\users\edit_user.php:130
