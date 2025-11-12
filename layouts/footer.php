@@ -16,12 +16,21 @@
     </div>
 </footer>
 
-<!-- Scripts -->
-<script src="<?php echo BASE_URL; ?>assets/js/jquery-3.6.0.min.js"></script>
+<!-- Scripts - CRITICAL ORDER: jQuery is already loaded in header.php -->
+<!-- Load Bootstrap JS (depends on jQuery) -->
 <script src="<?php echo BASE_URL; ?>assets/js/bootstrap.bundle.min.js"></script>
+
+<!-- Load custom.js (depends on jQuery and Bootstrap) -->
 <script src="<?php echo BASE_URL; ?>assets/js/custom.js"></script>
 
 <script>
+// Verify jQuery is loaded
+if (typeof jQuery === 'undefined') {
+    console.error('CRITICAL ERROR: jQuery is not loaded in footer!');
+} else {
+    console.log('✓ jQuery loaded successfully, version:', jQuery.fn.jquery);
+}
+
 // Notification system with improved UI
 function loadNotifications() {
     $.ajax({
@@ -108,10 +117,10 @@ function loadNotifications() {
     });
 }
 
-// Mark notification as read with smooth animation
+// Mark notification as read
 $(document).on('click', '.notification-item', function(e) {
     if ($(e.target).closest('.acknowledge-btn').length) {
-        return; // Don't mark as read if clicking acknowledge button
+        return;
     }
     
     e.preventDefault();
@@ -120,7 +129,6 @@ $(document).on('click', '.notification-item', function(e) {
     const notifId = $(this).data('notif-id');
     const $item = $(this);
     
-    // Visual feedback
     $item.css('opacity', '0.6');
     
     $.post('<?php echo BASE_URL; ?>ajax/notification_operations.php', {
@@ -129,13 +137,11 @@ $(document).on('click', '.notification-item', function(e) {
     }, function() {
         $item.removeClass('notification-unread');
         $item.animate({ opacity: 1 }, 300);
-        
-        // Reload after a delay to show the change
         setTimeout(loadNotifications, 500);
     });
 });
 
-// Acknowledge notification with animation
+// Acknowledge notification
 $(document).on('click', '.acknowledge-btn', function(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -144,7 +150,6 @@ $(document).on('click', '.acknowledge-btn', function(e) {
     const $btn = $(this);
     const $item = $btn.closest('.notification-item');
     
-    // Visual feedback
     $btn.html('<i class="bi bi-check-circle-fill"></i>').prop('disabled', true);
     $item.css('opacity', '0.6');
     
@@ -152,7 +157,6 @@ $(document).on('click', '.acknowledge-btn', function(e) {
         action: 'acknowledge',
         notification_id: notifId
     }, function() {
-        // Slide up and remove
         $item.slideUp(300, function() {
             loadNotifications();
         });
@@ -162,27 +166,21 @@ $(document).on('click', '.acknowledge-btn', function(e) {
     });
 });
 
-// Load notifications on page load with fade in
+// Load notifications on page load
 $(document).ready(function() {
+    console.log('✓ Document ready - footer scripts initialized');
     loadNotifications();
     
-    // Add fade in animation when dropdown opens
+    // Reload when dropdown opens
     $('#notificationDropdown').on('show.bs.dropdown', function() {
         loadNotifications();
     });
 });
 
-// Auto-refresh notifications every 30 seconds
+// Auto-refresh notifications
 setInterval(loadNotifications, <?php echo NOTIFICATION_REFRESH_INTERVAL * 1000; ?>);
 
-// Add loading indicator during AJAX calls
-$(document).ajaxStart(function() {
-    // Optional: Add a subtle loading indicator
-}).ajaxStop(function() {
-    // Optional: Remove loading indicator
-});
-
-// Smooth scroll to top for long pages
+// Smooth scroll to top
 $(window).scroll(function() {
     if ($(this).scrollTop() > 300) {
         if (!$('#backToTop').length) {
@@ -207,7 +205,7 @@ $(document).on('click', '#backToTop', function() {
     $('html, body').animate({ scrollTop: 0 }, 600);
 });
 
-// Toast notification for quick actions
+// Toast notification
 function showToast(message, type = 'success') {
     const bgColor = type === 'success' ? '#28a745' : type === 'danger' ? '#dc3545' : '#ffc107';
     const icon = type === 'success' ? 'check-circle' : type === 'danger' ? 'x-circle' : 'info-circle';

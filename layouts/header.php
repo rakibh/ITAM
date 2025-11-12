@@ -1,6 +1,6 @@
 <?php
 // File: layouts/header.php
-// Purpose: Common header with modern UI and notification bell
+// Purpose: Common header with modern UI and notification bell - FIXED jQuery Loading
 
 if (!defined('ROOT_PATH')) {
     define('ROOT_PATH', dirname(__DIR__) . '/');
@@ -52,6 +52,9 @@ try {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CRITICAL: Load jQuery FIRST before any other scripts -->
+    <script src="<?php echo BASE_URL; ?>assets/js/jquery-3.6.0.min.js"></script>
     
     <style>
         body {

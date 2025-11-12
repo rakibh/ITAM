@@ -1,7 +1,7 @@
 <?php
 // Folder: pages/todos/
 // File: list_todos.php
-// Purpose: Main task board with tabs, search, filter, and drag-and-drop reordering
+// Purpose: Main task board with tabs, search, filter - FIXED VERSION
 
 define('ROOT_PATH', dirname(dirname(__DIR__)) . '/');
 $pageTitle = 'Task Management';
@@ -16,13 +16,13 @@ $stmt = $pdo->prepare("
     SELECT 
         COUNT(CASE WHEN t.status NOT IN ('Completed', 'Cancelled') THEN 1 END) as all_count,
         COUNT(CASE WHEN t.created_by = ? THEN 1 END) as assigned_count,
-        COUNT(CASE WHEN t.status = 'Ongoing' AND EXISTS (SELECT 1 FROM todo_assignments ta WHERE ta.todo_id = t.id AND ta.user_id = ?) THEN 1 END) as ongoing_count,
+        COUNT(CASE WHEN t.status = 'Ongoing' THEN 1 END) as ongoing_count,
         COUNT(CASE WHEN t.status = 'Pending' THEN 1 END) as pending_count,
         COUNT(CASE WHEN t.status = 'Completed' THEN 1 END) as completed_count,
         COUNT(CASE WHEN t.status = 'Cancelled' THEN 1 END) as cancelled_count
     FROM todos t
 ");
-$stmt->execute([$userId, $userId]);
+$stmt->execute([$userId]);
 $taskCounts = $stmt->fetch();
 
 // Get all active users for assignment
@@ -257,60 +257,111 @@ $allUsers = $usersStmt->fetchAll();
 </div>
 
 <script>
+// IMPORTANT: Check if jQuery is loaded
+if (typeof jQuery === 'undefined') {
+    alert('ERROR: jQuery is not loaded! Please check your header.php file.');
+}
+
+console.log('=== TODO LIST PAGE LOADED ===');
+console.log('Base URL:', '<?php echo BASE_URL; ?>');
+console.log('Current User ID:', <?php echo getCurrentUserId(); ?>);
+
 let currentFilter = 'all';
 let allTasksData = [];
 
 $(document).ready(function() {
-    // Set minimum date to today for deadline
+    console.log('Document ready - initializing...');
+    
+    // Set minimum date to today
     const today = new Date().toISOString().split('T')[0];
     $('input[name="deadline_date"]').attr('min', today);
     
+    // Load tasks immediately
+    console.log('Calling loadTasks("all")...');
     loadTasks('all');
     
     // Tab switching
     $('[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
         currentFilter = $(e.target).data('filter');
+        console.log('Tab switched to:', currentFilter);
         loadTasks(currentFilter);
     });
     
     // Search on input
     $('#searchTasks').on('input', debounce(function() {
+        console.log('Search triggered:', $(this).val());
         filterTasks();
     }, 300));
 });
 
 // Load tasks from server
 function loadTasks(filter) {
+    console.log('=== loadTasks CALLED ===');
+    console.log('Filter:', filter);
+    
+    const ajaxUrl = '<?php echo BASE_URL; ?>ajax/todo_operations.php';
+    console.log('AJAX URL:', ajaxUrl);
+    console.log('Request parameters:', { action: 'get_tasks', filter: filter });
+    
     $.ajax({
-        url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
+        url: ajaxUrl,
         type: 'GET',
         data: { action: 'get_tasks', filter: filter },
         dataType: 'json',
+        beforeSend: function() {
+            console.log('AJAX request starting...');
+        },
         success: function(response) {
-            console.log('Tasks loaded:', response); // Debug log
+            console.log('=== AJAX SUCCESS ===');
+            console.log('Response:', response);
+            
             if (response.success) {
-                allTasksData = response.tasks;
-                displayTasks(response.tasks);
+                allTasksData = response.tasks || [];
+                console.log('Tasks loaded:', allTasksData.length);
+                displayTasks(allTasksData);
             } else {
+                console.error('Response indicated failure:', response.message);
                 $('#tasksList').html('<div class="col-12"><div class="alert alert-warning">' + (response.message || 'No tasks found') + '</div></div>');
             }
         },
         error: function(xhr, status, error) {
-            console.error('Load tasks error:', xhr, status, error); // Debug log
-            $('#tasksList').html('<div class="col-12"><div class="alert alert-danger">Failed to load tasks. Please refresh the page.</div></div>');
+            console.error('=== AJAX ERROR ===');
+            console.error('Status:', status);
+            console.error('Error:', error);
+            console.error('Response Text:', xhr.responseText);
+            console.error('Status Code:', xhr.status);
+            
+            let errorMsg = 'Failed to load tasks. ';
+            if (xhr.status === 404) {
+                errorMsg += 'Endpoint not found (404). Check if todo_operations.php exists.';
+            } else if (xhr.status === 500) {
+                errorMsg += 'Server error (500). Check PHP error logs.';
+            } else {
+                errorMsg += 'Error: ' + error;
+            }
+            
+            $('#tasksList').html('<div class="col-12"><div class="alert alert-danger">' + errorMsg + '<br><small>Check browser console for details.</small></div></div>');
+        },
+        complete: function() {
+            console.log('AJAX request completed');
         }
     });
 }
 
 // Display tasks as cards
 function displayTasks(tasks) {
+    console.log('=== displayTasks CALLED ===');
+    console.log('Number of tasks:', tasks.length);
+    
     if (tasks.length === 0) {
-        $('#tasksList').html('<div class="col-12 text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No tasks found</div>');
+        $('#tasksList').html('<div class="col-12 text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i><p>No tasks found</p></div>');
         return;
     }
     
     let html = '';
     tasks.forEach(function(task) {
+        console.log('Processing task:', task.id, task.title);
+        
         const priorityClass = 'priority-' + task.priority.toLowerCase();
         const statusClass = 'status-' + task.status.toLowerCase();
         const deadline = new Date(task.deadline_date + ' ' + task.deadline_time);
@@ -318,7 +369,7 @@ function displayTasks(tasks) {
         const isOverdue = deadline < now && task.status !== 'Completed' && task.status !== 'Cancelled';
         
         html += `
-            <div class="col-md-6 col-lg-4 mb-3 task-card" data-task-id="${task.id}" data-priority="${task.priority}" data-created="${task.created_at}">
+            <div class="col-md-6 col-lg-4 mb-3 task-card" data-task-id="${task.id}">
                 <div class="card h-100 ${isOverdue ? 'border-danger border-2' : ''}">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
@@ -366,12 +417,10 @@ function displayTasks(tasks) {
     });
     
     $('#tasksList').html(html);
-    
-    // Note: Drag-and-drop reordering disabled due to browser tracking prevention
-    // You can enable it by downloading SortableJS locally and hosting it
+    console.log('Tasks displayed successfully');
 }
 
-// Filter tasks based on search and filters
+// Filter tasks
 function filterTasks() {
     const searchTerm = $('#searchTasks').val().toLowerCase();
     const priorityFilter = $('#filterPriority').val();
@@ -418,6 +467,7 @@ function applyFilters() {
 // Add task
 $('#addTaskForm').on('submit', function(e) {
     e.preventDefault();
+    console.log('Add task form submitted');
     
     const submitBtn = $(this).find('button[type="submit"]');
     submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Creating...');
@@ -428,6 +478,7 @@ $('#addTaskForm').on('submit', function(e) {
         data: $(this).serialize() + '&action=add&csrf_token=<?php echo getCsrfToken(); ?>',
         dataType: 'json',
         success: function(response) {
+            console.log('Add task response:', response);
             if (response.success) {
                 $('#addTaskModal').modal('hide');
                 $('#addTaskForm')[0].reset();
@@ -439,7 +490,7 @@ $('#addTaskForm').on('submit', function(e) {
             }
         },
         error: function(xhr) {
-            console.error('AJAX Error:', xhr);
+            console.error('Add task error:', xhr);
             const errorMsg = xhr.responseJSON?.message || xhr.statusText || 'Error creating task';
             showAlert('danger', errorMsg);
             submitBtn.prop('disabled', false).html('Create Task');
@@ -447,12 +498,11 @@ $('#addTaskForm').on('submit', function(e) {
     });
 });
 
-// Edit task - load data
+// Edit task
 function editTask(taskId) {
     const task = allTasksData.find(t => t.id == taskId);
     if (!task) return;
     
-    // Get assigned user IDs
     $.ajax({
         url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
         type: 'GET',
@@ -467,10 +517,7 @@ function editTask(taskId) {
                 $('#edit_priority').val(task.priority);
                 $('#edit_deadline_date').val(task.deadline_date);
                 $('#edit_deadline_time').val(task.deadline_time);
-                
-                // Select assigned users
                 $('#edit_assigned_users').val(response.assigned_user_ids);
-                
                 $('#editTaskModal').modal('show');
             }
         }
@@ -500,14 +547,13 @@ $('#editTaskForm').on('submit', function(e) {
             }
         },
         error: function(xhr) {
-            console.error('AJAX Error:', xhr);
             showAlert('danger', xhr.responseJSON?.message || 'Error updating task');
             submitBtn.prop('disabled', false).html('Update Task');
         }
     });
 });
 
-// View task in new tab
+// View task
 function viewTask(taskId) {
     window.open('<?php echo BASE_URL; ?>pages/todos/view_todo.php?id=' + taskId, '_blank');
 }
@@ -535,7 +581,6 @@ function changeStatus(taskId, newStatus) {
             }
         },
         error: function(xhr) {
-            console.error('AJAX Error:', xhr);
             showAlert('danger', xhr.responseJSON?.message || 'Error changing status');
         }
     });
@@ -563,32 +608,7 @@ function deleteTask(taskId, title) {
             }
         },
         error: function(xhr) {
-            console.error('AJAX Error:', xhr);
             showAlert('danger', xhr.responseJSON?.message || 'Error deleting task');
-        }
-    });
-}
-
-// Reorder tasks (drag and drop)
-function reorderTasks() {
-    const orderedIds = [];
-    $('.task-card').each(function() {
-        orderedIds.push($(this).data('task-id'));
-    });
-    
-    $.ajax({
-        url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
-        type: 'POST',
-        data: { 
-            action: 'reorder', 
-            ordered_ids: orderedIds,
-            csrf_token: '<?php echo getCsrfToken(); ?>'
-        },
-        dataType: 'json',
-        success: function(response) {
-            if (response.success) {
-                // Silent success
-            }
         }
     });
 }
@@ -637,6 +657,7 @@ function formatDateTime(datetime) {
 }
 
 function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
