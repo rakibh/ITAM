@@ -1,7 +1,7 @@
 <?php
 // Folder: pages/todos/
 // File: view_todo.php
-// Purpose: View detailed task information with comments and activity log
+// Purpose: View detailed task information - FIXED CSRF & Cancel Modal
 
 define('ROOT_PATH', dirname(dirname(__DIR__)) . '/');
 $pageTitle = 'View Task';
@@ -71,6 +71,9 @@ foreach ($assignedUsers as $user) {
         break;
     }
 }
+
+// Check if user can cancel
+$canCancel = $canManage && $task['status'] !== 'Completed' && $task['status'] !== 'Cancelled';
 ?>
 
 <?php require_once ROOT_PATH . 'layouts/sidebar.php'; ?>
@@ -82,20 +85,20 @@ foreach ($assignedUsers as $user) {
             <div class="btn-group me-2">
                 <?php if ($task['status'] !== 'Completed' && $task['status'] !== 'Cancelled' && ($canManage || $isAssigned)): ?>
                     <?php if ($task['status'] === 'Assigned'): ?>
-                        <button type="button" class="btn btn-success" onclick="changeStatus('Ongoing')">
+                        <button type="button" class="btn btn-success" onclick="promptStatusChange('Ongoing')">
                             <i class="bi bi-play-circle me-1"></i>Start Task
                         </button>
                     <?php elseif ($task['status'] === 'Ongoing'): ?>
-                        <button type="button" class="btn btn-success" onclick="changeStatus('Completed')">
+                        <button type="button" class="btn btn-success" onclick="promptStatusChange('Completed')">
                             <i class="bi bi-check-circle me-1"></i>Mark Complete
                         </button>
                     <?php elseif ($task['status'] === 'Pending'): ?>
-                        <button type="button" class="btn btn-warning" onclick="changeStatus('Ongoing')">
+                        <button type="button" class="btn btn-warning" onclick="promptStatusChange('Ongoing')">
                             <i class="bi bi-play-circle me-1"></i>Resume
                         </button>
                     <?php endif; ?>
-                    <?php if ($canManage): ?>
-                        <button type="button" class="btn btn-danger" onclick="changeStatus('Cancelled')">
+                    <?php if ($canCancel): ?>
+                        <button type="button" class="btn btn-danger" onclick="promptCancelTask()">
                             <i class="bi bi-x-circle me-1"></i>Cancel Task
                         </button>
                     <?php endif; ?>
@@ -293,7 +296,55 @@ foreach ($assignedUsers as $user) {
     </div>
 </main>
 
+<!-- Status Change Confirmation Modal -->
+<div class="modal fade" id="statusChangeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Status Change</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="statusChangeMessage"></p>
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <small>This will update the task status.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmStatusChange">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Task Confirmation Modal -->
+<div class="modal fade" id="cancelTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Cancel Task</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to <strong>cancel</strong> the task "<strong><?php echo htmlspecialchars($task['title']); ?></strong>"?</p>
+                <div class="alert alert-warning mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> Cancelled tasks cannot be resumed.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep Task Active</button>
+                <button type="button" class="btn btn-danger" id="confirmCancelTask">Yes, Cancel Task</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+let pendingStatusChange = null;
+
 // Add comment
 $('#addCommentForm').on('submit', function(e) {
     e.preventDefault();
@@ -305,7 +356,7 @@ $('#addCommentForm').on('submit', function(e) {
     $.ajax({
         url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
         type: 'POST',
-        data: $(this).serialize() + '&action=add_comment',
+        data: $(this).serialize() + '&action=add_comment&csrf_token=<?php echo getCsrfToken(); ?>',
         dataType: 'json',
         success: function(response) {
             if (response.success) {
@@ -320,17 +371,24 @@ $('#addCommentForm').on('submit', function(e) {
     });
 });
 
-// Change status
-function changeStatus(newStatus) {
-    let confirmMsg = 'Change task status to ' + newStatus + '?';
+// Status change with modal
+function promptStatusChange(newStatus) {
+    pendingStatusChange = newStatus;
     
-    if (newStatus === 'Cancelled') {
-        confirmMsg = 'Are you sure you want to cancel this task? This action cannot be undone.';
-    } else if (newStatus === 'Completed') {
-        confirmMsg = 'Mark this task as completed? Make sure all work is finished.';
+    let message = `Are you sure you want to change the status to <strong>${newStatus}</strong>?`;
+    
+    if (newStatus === 'Completed') {
+        message = 'Mark this task as <strong>completed</strong>? Make sure all work is finished.';
     }
     
-    if (!confirm(confirmMsg)) return;
+    $('#statusChangeMessage').html(message);
+    $('#statusChangeModal').modal('show');
+}
+
+$('#confirmStatusChange').on('click', function() {
+    if (!pendingStatusChange) return;
+    
+    $('#statusChangeModal').modal('hide');
     
     $.ajax({
         url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
@@ -338,7 +396,8 @@ function changeStatus(newStatus) {
         data: { 
             action: 'change_status', 
             todo_id: <?php echo $todoId; ?>, 
-            status: newStatus 
+            status: pendingStatusChange,
+            csrf_token: '<?php echo getCsrfToken(); ?>'
         },
         dataType: 'json',
         beforeSend: function() {
@@ -356,9 +415,46 @@ function changeStatus(newStatus) {
             showAlert('danger', xhr.responseJSON?.message || 'Error changing status');
         }
     });
+    
+    pendingStatusChange = null;
+});
+
+// Cancel task with modal
+function promptCancelTask() {
+    $('#cancelTaskModal').modal('show');
 }
 
-// Loading overlay functions
+$('#confirmCancelTask').on('click', function() {
+    $('#cancelTaskModal').modal('hide');
+    
+    $.ajax({
+        url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
+        type: 'POST',
+        data: { 
+            action: 'change_status', 
+            todo_id: <?php echo $todoId; ?>, 
+            status: 'Cancelled',
+            csrf_token: '<?php echo getCsrfToken(); ?>'
+        },
+        dataType: 'json',
+        beforeSend: function() {
+            showLoading();
+        },
+        success: function(response) {
+            hideLoading();
+            if (response.success) {
+                showAlert('success', 'Task cancelled successfully');
+                setTimeout(() => location.reload(), 1500);
+            }
+        },
+        error: function(xhr) {
+            hideLoading();
+            showAlert('danger', xhr.responseJSON?.message || 'Error cancelling task');
+        }
+    });
+});
+
+// Loading overlay
 function showLoading() {
     $('body').append('<div class="loading-overlay"><div class="spinner-border text-primary" role="status"></div></div>');
 }

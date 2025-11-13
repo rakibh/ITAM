@@ -1,7 +1,7 @@
 <?php
 // Folder: ajax/
 // File: todo_operations.php
-// Purpose: Handle todo/task CRUD operations via AJAX - FIXED VERSION
+// Purpose: Handle todo/task CRUD operations - UPDATED VERSION
 
 require_once '../config/config.php';
 require_once '../config/session.php';
@@ -19,7 +19,6 @@ try {
             $filter = sanitize($_GET['filter'] ?? 'all');
             $userId = getCurrentUserId();
             
-            // FIXED: Simplified query logic to always return tasks
             $where = [];
             $params = [];
             
@@ -33,12 +32,11 @@ try {
                 case 'ongoing':
                     // Tasks in Ongoing status
                     $where[] = "t.status = 'Ongoing'";
-                    $where[] = "EXISTS (SELECT 1 FROM todo_assignments ta WHERE ta.todo_id = t.id AND ta.user_id = ?)";
-                    $params[] = $userId;
                     break;
                     
                 case 'pending':
-                    $where[] = "t.status = 'Pending'";
+                    // Tasks in Pending status OR overdue tasks (not completed/cancelled)
+                    $where[] = "(t.status = 'Pending' OR (CONCAT(t.deadline_date, ' ', t.deadline_time) < NOW() AND t.status NOT IN ('Completed', 'Cancelled')))";
                     break;
                     
                 case 'completed':
@@ -56,7 +54,6 @@ try {
             
             $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
             
-            // FIXED: Proper SQL query
             $sql = "
                 SELECT t.*, 
                        u.first_name as creator_first_name,
@@ -91,17 +88,21 @@ try {
                 throw new Exception('Invalid CSRF token');
             }
             
-            // Validate required fields
             $title = sanitize($_POST['title'] ?? '');
             $description = sanitize($_POST['description'] ?? '') ?: null;
             $tags = sanitize($_POST['tags'] ?? '') ?: null;
             $priority = sanitize($_POST['priority'] ?? 'Medium');
             $deadlineDate = sanitize($_POST['deadline_date'] ?? '');
-            $deadlineTime = sanitize($_POST['deadline_time'] ?? '');
+            $deadlineTime = sanitize($_POST['deadline_time'] ?? '23:59:00'); // Default to end of day
             $assignedUsers = $_POST['assigned_users'] ?? [];
             
-            if (empty($title) || empty($deadlineDate) || empty($deadlineTime)) {
-                throw new Exception('Title, deadline date, and time are required');
+            if (empty($title) || empty($deadlineDate)) {
+                throw new Exception('Title and deadline date are required');
+            }
+            
+            // Ensure time has seconds
+            if (strlen($deadlineTime) == 5) {
+                $deadlineTime .= ':00';
             }
             
             // Validate deadline is in future
@@ -140,7 +141,6 @@ try {
             break;
             
         case 'update':
-            // CSRF validation
             if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
                 throw new Exception('Invalid CSRF token');
             }
@@ -151,11 +151,16 @@ try {
             $tags = sanitize($_POST['tags'] ?? '') ?: null;
             $priority = sanitize($_POST['priority'] ?? 'Medium');
             $deadlineDate = sanitize($_POST['deadline_date'] ?? '');
-            $deadlineTime = sanitize($_POST['deadline_time'] ?? '');
+            $deadlineTime = sanitize($_POST['deadline_time'] ?? '23:59:00');
             $assignedUsers = $_POST['assigned_users'] ?? [];
             
-            if (empty($title) || empty($deadlineDate) || empty($deadlineTime)) {
-                throw new Exception('Title, deadline date, and time are required');
+            if (empty($title) || empty($deadlineDate)) {
+                throw new Exception('Title and deadline date are required');
+            }
+            
+            // Ensure time has seconds
+            if (strlen($deadlineTime) == 5) {
+                $deadlineTime .= ':00';
             }
             
             // Check permission
@@ -201,7 +206,6 @@ try {
             break;
             
         case 'change_status':
-            // CSRF validation
             if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
                 throw new Exception('Invalid CSRF token');
             }
@@ -236,11 +240,10 @@ try {
                               getCurrentUserName() . " changed task '{$todo['title']}' to {$newStatus}", 
                               ['todo_id' => $todoId, 'new_status' => $newStatus]);
             
-            echo json_encode(['success' => true, 'message' => 'Task status updated']);
+            echo json_encode(['success' => true, 'message' => 'Task status updated to ' . $newStatus]);
             break;
             
         case 'delete':
-            // CSRF validation
             if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
                 throw new Exception('Invalid CSRF token');
             }
