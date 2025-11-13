@@ -235,7 +235,7 @@ $users = $stmt->fetchAll();
                         <div class="col-md-6">
                             <label class="form-label">Password <span class="text-danger">*</span></label>
                             <input type="password" class="form-control" name="password" required>
-                            <small class="text-muted">Min 6 chars, 1 letter, 1 number, 1 special char</small>
+                            <small class="text-muted">Min 6 chars, 1 letter, 1 number, 1 special char (!@#$%^&*)</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Role <span class="text-danger">*</span></label>
@@ -276,7 +276,7 @@ $users = $stmt->fetchAll();
                     <div class="mb-3">
                         <label class="form-label">New Password</label>
                         <input type="password" class="form-control" name="new_password" required>
-                        <small class="text-muted">Min 6 chars, 1 letter, 1 number, 1 special char</small>
+                        <small class="text-muted">Min 6 chars, 1 letter, 1 number, 1 special char (!@#$%^&*)</small>
                     </div>
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle me-2"></i>
@@ -293,74 +293,190 @@ $users = $stmt->fetchAll();
 </div>
 
 <script>
-// Add User
+// Store CSRF token and Base URL
+const CSRF_TOKEN = '<?php echo getCsrfToken(); ?>';
+const BASE_URL = '<?php echo BASE_URL; ?>';
+
+console.log('🔐 Page loaded with CSRF Token:', CSRF_TOKEN.substring(0, 20) + '...');
+console.log('🌐 Base URL:', BASE_URL);
+
+// Add User Form Submission
 $('#addUserForm').on('submit', function(e) {
     e.preventDefault();
+    console.log('📝 Add User Form Submitted');
+    
+    // Collect form data
+    const formData = {
+        first_name: $('input[name="first_name"]').val(),
+        last_name: $('input[name="last_name"]').val(),
+        employee_id: $('input[name="employee_id"]').val(),
+        username: $('input[name="username"]').val(),
+        email: $('input[name="email"]').val(),
+        phone_1: $('input[name="phone_1"]').val(),
+        phone_2: $('input[name="phone_2"]').val(),
+        password: $('input[name="password"]').val(),
+        role: $('select[name="role"]').val(),
+        status: $('select[name="status"]').val(),
+        action: 'add',
+        csrf_token: CSRF_TOKEN
+    };
+    
+    console.log('📤 Sending data:', formData);
+    
+    // Disable submit button
+    const submitBtn = $(this).find('button[type="submit"]');
+    const originalText = submitBtn.html();
+    submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Creating...');
     
     $.ajax({
-        url: '<?php echo BASE_URL; ?>ajax/user_operations.php',
+        url: BASE_URL + 'ajax/user_operations.php',
         type: 'POST',
-        data: $(this).serialize() + '&action=add',
+        data: formData,
         dataType: 'json',
         success: function(response) {
+            console.log('✅ Success:', response);
+            
             if (response.success) {
                 $('#addUserModal').modal('hide');
                 showAlert('success', response.message);
-                setTimeout(() => location.reload(), 1500);
+                
+                // Reload page after 1.5 seconds
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1500);
             } else {
                 showAlert('danger', response.message);
+                submitBtn.prop('disabled', false).html(originalText);
             }
         },
-        error: function(xhr) {
-            showAlert('danger', xhr.responseJSON?.message || 'Error adding user');
+        error: function(xhr, status, error) {
+            console.error('❌ AJAX Error:', {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                responseText: xhr.responseText,
+                error: error
+            });
+            
+            let errorMsg = 'Error adding user';
+            
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.message) {
+                    errorMsg = response.message;
+                    if (response.file && response.line) {
+                        errorMsg += ` (${response.file}:${response.line})`;
+                    }
+                }
+            } catch(e) {
+                errorMsg = xhr.responseText || xhr.statusText || 'Unknown error';
+            }
+            
+            showAlert('danger', errorMsg);
+            submitBtn.prop('disabled', false).html(originalText);
         }
     });
 });
 
 // Reset Password
 function resetPassword(userId) {
+    console.log('🔑 Reset password for user:', userId);
     $('#reset_user_id').val(userId);
     $('#resetPasswordModal').modal('show');
 }
 
 $('#resetPasswordForm').on('submit', function(e) {
     e.preventDefault();
+    console.log('🔑 Reset Password Form Submitted');
+    
+    const submitBtn = $(this).find('button[type="submit"]');
+    const originalText = submitBtn.html();
+    submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Resetting...');
+    
+    const data = $(this).serialize() + '&action=reset_password&csrf_token=' + CSRF_TOKEN;
     
     $.ajax({
-        url: '<?php echo BASE_URL; ?>ajax/user_operations.php',
+        url: BASE_URL + 'ajax/user_operations.php',
         type: 'POST',
-        data: $(this).serialize() + '&action=reset_password',
+        data: data,
         dataType: 'json',
         success: function(response) {
+            console.log('✅ Reset Success:', response);
+            
             if (response.success) {
                 $('#resetPasswordModal').modal('hide');
                 showAlert('success', response.message);
             } else {
                 showAlert('danger', response.message);
             }
+            
+            submitBtn.prop('disabled', false).html(originalText);
+        },
+        error: function(xhr) {
+            console.error('❌ Reset Error:', xhr);
+            
+            let errorMsg = 'Error resetting password';
+            try {
+                const response = JSON.parse(xhr.responseText);
+                errorMsg = response.message || errorMsg;
+            } catch(e) {}
+            
+            showAlert('danger', errorMsg);
+            submitBtn.prop('disabled', false).html(originalText);
         }
     });
 });
 
 // Delete User
 function deleteUser(userId, userName) {
-    if (confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
+    console.log('🗑️ Delete user:', userId, userName);
+    
+    if (confirm(`Are you sure you want to delete user "${userName}"?\n\nThis action cannot be undone.`)) {
         $.ajax({
-            url: '<?php echo BASE_URL; ?>ajax/user_operations.php',
+            url: BASE_URL + 'ajax/user_operations.php',
             type: 'POST',
-            data: { action: 'delete', user_id: userId },
+            data: { 
+                action: 'delete', 
+                user_id: userId,
+                csrf_token: CSRF_TOKEN
+            },
             dataType: 'json',
             success: function(response) {
+                console.log('✅ Delete Success:', response);
+                
                 if (response.success) {
                     showAlert('success', response.message);
-                    setTimeout(() => location.reload(), 1500);
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1500);
                 } else {
                     showAlert('danger', response.message);
                 }
+            },
+            error: function(xhr) {
+                console.error('❌ Delete Error:', xhr);
+                
+                let errorMsg = 'Error deleting user';
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg = response.message || errorMsg;
+                } catch(e) {}
+                
+                showAlert('danger', errorMsg);
             }
         });
     }
 }
+
+// Clear form when modal closes
+$('#addUserModal').on('hidden.bs.modal', function () {
+    $('#addUserForm')[0].reset();
+    console.log('🧹 Form cleared');
+});
+
+// Log when modal opens
+$('#addUserModal').on('show.bs.modal', function () {
+    console.log('📋 Add User Modal Opened');
+});
 </script>
 
 <?php require_once ROOT_PATH . 'layouts/footer.php'; ?>

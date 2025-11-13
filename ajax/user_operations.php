@@ -2,13 +2,19 @@
 // File: ajax/user_operations.php
 // Purpose: Handle user CRUD operations via AJAX
 
+// Prevent any output before JSON
+ob_start();
+
 require_once '../config/config.php';
 require_once '../config/session.php';
 require_once '../includes/functions.php';
 
+// Clear any previous output
+ob_clean();
+
 requireAdmin(); // Only admins can manage users
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
 $action = $_POST['action'] ?? '';
 
@@ -274,13 +280,29 @@ try {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    error_log("User operation error: " . $e->getMessage());
+    error_log("User operation PDO error: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
+    ob_clean(); // Clear any output
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode([
+        'success' => false, 
+        'message' => 'Database error: ' . $e->getMessage(),
+        'file' => basename($e->getFile()),
+        'line' => $e->getLine()
+    ]);
 } catch (Exception $e) {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    error_log("User operation error: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
+    ob_clean(); // Clear any output
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode([
+        'success' => false, 
+        'message' => $e->getMessage(),
+        'file' => basename($e->getFile()),
+        'line' => $e->getLine()
+    ]);
 }
+
+// Flush output buffer
+ob_end_flush();
