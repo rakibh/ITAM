@@ -1,5 +1,5 @@
 /* File: assets/css/custom.css */
-/* Purpose: Custom styling for IT Equipment Manager */
+/* Purpose: Custom styling for IT Equipment Manager - 5 STAGE SYSTEM */
 
 :root {
     --primary-color: #667eea;
@@ -10,7 +10,6 @@
 
 body {
     font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-
     color: var(--text-color);
 }
 
@@ -170,17 +169,137 @@ main {
     font-weight: bold;
 }
 
-/* Status Badges */
-.status-active { background-color: #28a745; }
-.status-inactive { background-color: #6c757d; }
-.status-assigned { background-color: #17a2b8; }
-.status-ongoing { background-color: #ffc107; }
-.status-pending { background-color: #fd7e14; }
-.status-completed { background-color: #28a745; }
-.status-cancelled { background-color: #dc3545; }
+/* ============================================ */
+/* STATUS BADGES - NEW 5-STAGE SYSTEM */
+/* ============================================ */
+
+/* Task Status Badges */
+.status-to-do { 
+    background-color: #6c757d; 
+    color: white;
+}
+
+.status-doing { 
+    background-color: #17a2b8; 
+    color: white;
+}
+
+.status-past-due { 
+    background-color: #ffc107; 
+    color: #000;
+}
+
+.status-done { 
+    background-color: #28a745; 
+    color: white;
+}
+
+.status-dropped { 
+    background-color: #dc3545; 
+    color: white;
+}
+
+/* Legacy Status Badges (for backward compatibility) */
+.status-active { 
+    background-color: #28a745; 
+}
+
+.status-inactive { 
+    background-color: #6c757d; 
+}
 
 /* Priority Badges */
-.priority-low { background-color: #6c757d; }
-.priority-medium { background-color: #17a2b8; }
-.priority-high { background-color: #ffc107; }
-.priority-urgent { background-color: #dc3545; }
+.priority-low { 
+    background-color: #6c757d; 
+    color: white;
+}
+
+.priority-medium { 
+    background-color: #17a2b8; 
+    color: white;
+}
+
+.priority-high { 
+    background-color: #ffc107; 
+    color: #000;
+}
+
+.priority-urgent { 
+    background-color: #dc3545; 
+    color: white;
+}
+
+/* Equipment Status Badges */
+.status-in-use {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.status-available {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-under-repair {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.status-retired {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Task Card Hover Effects */
+.task-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.task-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Status Badge Animation */
+.badge {
+    transition: all 0.3s ease;
+}
+
+.badge:hover {
+    transform: scale(1.05);
+}
+
+/* Tab Active State - 5-STAGE SYSTEM */
+.nav-tabs .nav-link.active {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    border-color: transparent;
+}
+
+.nav-tabs .nav-link {
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: #e9ecef #e9ecef #dee2e6;
+}
+
+/* Badge Count in Tabs */
+.nav-tabs .badge {
+    font-size: 0.75rem;
+    padding: 0.25em 0.5em;
+}
+
+/* Overdue Badge */
+.badge.bg-danger {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}

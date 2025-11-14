@@ -1,7 +1,7 @@
 <?php
 // Folder: pages/todos/
 // File: list_todos.php
-// Purpose: Main task board with tabs, search, filter - UPDATED VERSION
+// Purpose: Main task board with tabs - 5 STAGE SYSTEM
 
 define('ROOT_PATH', dirname(dirname(__DIR__)) . '/');
 $pageTitle = 'Task Management';
@@ -11,18 +11,18 @@ requireLogin();
 
 $userId = getCurrentUserId();
 
-// Get task counts for tabs
+// Get task counts for tabs - NEW 5-STAGE SYSTEM
 $stmt = $pdo->prepare("
     SELECT 
-        COUNT(CASE WHEN t.status NOT IN ('Completed', 'Cancelled') THEN 1 END) as all_count,
-        COUNT(CASE WHEN t.created_by = ? THEN 1 END) as assigned_count,
-        COUNT(CASE WHEN t.status = 'Ongoing' THEN 1 END) as ongoing_count,
-        COUNT(CASE WHEN t.status = 'Pending' THEN 1 END) as pending_count,
-        COUNT(CASE WHEN t.status = 'Completed' THEN 1 END) as completed_count,
-        COUNT(CASE WHEN t.status = 'Cancelled' THEN 1 END) as cancelled_count
+        COUNT(CASE WHEN t.status NOT IN ('Done', 'Dropped') THEN 1 END) as all_count,
+        COUNT(CASE WHEN t.status = 'To Do' THEN 1 END) as todo_count,
+        COUNT(CASE WHEN t.status = 'Doing' THEN 1 END) as doing_count,
+        COUNT(CASE WHEN t.status = 'Past Due' OR (CONCAT(t.deadline_date, ' ', t.deadline_time) < NOW() AND t.status NOT IN ('Done', 'Dropped')) THEN 1 END) as pastdue_count,
+        COUNT(CASE WHEN t.status = 'Done' THEN 1 END) as done_count,
+        COUNT(CASE WHEN t.status = 'Dropped' THEN 1 END) as dropped_count
     FROM todos t
 ");
-$stmt->execute([$userId]);
+$stmt->execute();
 $taskCounts = $stmt->fetch();
 
 // Get all active users for assignment
@@ -44,7 +44,7 @@ $allUsers = $usersStmt->fetchAll();
 
     <div id="alert-container"></div>
 
-    <!-- Task Tabs -->
+    <!-- Task Tabs - NEW 5-STAGE SYSTEM -->
     <ul class="nav nav-tabs mb-4" id="taskTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" 
@@ -53,33 +53,33 @@ $allUsers = $usersStmt->fetchAll();
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="assigned-tab" data-bs-toggle="tab" data-bs-target="#assigned" 
-                    type="button" role="tab" data-filter="assigned">
-                Assigned <span class="badge bg-info ms-1"><?php echo $taskCounts['assigned_count']; ?></span>
+            <button class="nav-link" id="todo-tab" data-bs-toggle="tab" data-bs-target="#todo" 
+                    type="button" role="tab" data-filter="todo">
+                To Do <span class="badge bg-primary ms-1"><?php echo $taskCounts['todo_count']; ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="ongoing-tab" data-bs-toggle="tab" data-bs-target="#ongoing" 
-                    type="button" role="tab" data-filter="ongoing">
-                Ongoing <span class="badge bg-warning ms-1"><?php echo $taskCounts['ongoing_count']; ?></span>
+            <button class="nav-link" id="doing-tab" data-bs-toggle="tab" data-bs-target="#doing" 
+                    type="button" role="tab" data-filter="doing">
+                Doing <span class="badge bg-info ms-1"><?php echo $taskCounts['doing_count']; ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" 
-                    type="button" role="tab" data-filter="pending">
-                Pending <span class="badge bg-danger ms-1"><?php echo $taskCounts['pending_count']; ?></span>
+            <button class="nav-link" id="pastdue-tab" data-bs-toggle="tab" data-bs-target="#pastdue" 
+                    type="button" role="tab" data-filter="pastdue">
+                Past Due <span class="badge bg-warning text-dark ms-1"><?php echo $taskCounts['pastdue_count']; ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" 
-                    type="button" role="tab" data-filter="completed">
-                Completed <span class="badge bg-success ms-1"><?php echo $taskCounts['completed_count']; ?></span>
+            <button class="nav-link" id="done-tab" data-bs-toggle="tab" data-bs-target="#done" 
+                    type="button" role="tab" data-filter="done">
+                Done <span class="badge bg-success ms-1"><?php echo $taskCounts['done_count']; ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled" 
-                    type="button" role="tab" data-filter="cancelled">
-                Cancelled <span class="badge bg-secondary ms-1"><?php echo $taskCounts['cancelled_count']; ?></span>
+            <button class="nav-link" id="dropped-tab" data-bs-toggle="tab" data-bs-target="#dropped" 
+                    type="button" role="tab" data-filter="dropped">
+                Dropped <span class="badge bg-danger ms-1"><?php echo $taskCounts['dropped_count']; ?></span>
             </button>
         </li>
     </ul>
@@ -285,10 +285,35 @@ $allUsers = $usersStmt->fetchAll();
     </div>
 </div>
 
+<!-- Drop Task Confirmation Modal -->
+<div class="modal fade" id="dropTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Drop Task</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to <strong>drop</strong> this task?</p>
+                <div id="dropTaskTitle" class="alert alert-secondary mb-3"></div>
+                <div class="alert alert-warning mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> Dropped tasks cannot be resumed.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep Task Active</button>
+                <button type="button" class="btn btn-danger" id="confirmDropTask">Yes, Drop Task</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 let currentFilter = 'all';
 let allTasksData = [];
 let pendingStatusChange = null;
+let pendingDropTask = null;
 
 $(document).ready(function() {
     const today = new Date().toISOString().split('T')[0];
@@ -336,10 +361,15 @@ function displayTasks(tasks) {
     tasks.forEach(function(task) {
         const deadline = new Date(task.deadline_date + ' ' + task.deadline_time);
         const now = new Date();
-        const isOverdue = deadline < now && task.status !== 'Completed' && task.status !== 'Cancelled';
+        const isOverdue = deadline < now && task.status !== 'Done' && task.status !== 'Dropped';
         
         const priorityClass = 'priority-' + task.priority.toLowerCase();
-        const statusClass = 'status-' + task.status.toLowerCase();
+        const statusClass = 'status-' + task.status.toLowerCase().replace(' ', '-');
+        
+        // Check if user can drop (creator, admin, or assigned)
+        const userId = <?php echo getCurrentUserId(); ?>;
+        const isAdmin = <?php echo isAdmin() ? 'true' : 'false'; ?>;
+        const canDrop = (task.created_by == userId || isAdmin) && task.status !== 'Done' && task.status !== 'Dropped';
         
         html += `
             <div class="col-md-6 col-lg-4 mb-3 task-card" data-task-id="${task.id}">
@@ -371,8 +401,13 @@ function displayTasks(tasks) {
                                         <i class="bi bi-${getStatusIcon(getNextStatus(task.status))}"></i>
                                     </button>
                                 ` : ''}
+                                ${canDrop ? `
+                                    <button class="btn btn-outline-warning" onclick="promptDropTask(${task.id}, '${escapeHtml(task.title)}')" title="Drop Task">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                ` : ''}
                                 ${canEdit(task) ? `
-                                    <button class="btn btn-outline-warning" onclick="editTask(${task.id})" title="Edit">
+                                    <button class="btn btn-outline-secondary" onclick="editTask(${task.id})" title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                 ` : ''}
@@ -450,7 +485,6 @@ $('#addTaskForm').on('submit', function(e) {
     const submitBtn = $(this).find('button[type="submit"]');
     submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Creating...');
     
-    // Set default time if empty
     let formData = $(this).serialize();
     if (!$('input[name="deadline_time"]').val()) {
         formData += '&deadline_time=23:59';
@@ -510,7 +544,6 @@ $('#editTaskForm').on('submit', function(e) {
     const submitBtn = $(this).find('button[type="submit"]');
     submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Updating...');
     
-    // Set default time if empty
     let formData = $(this).serialize();
     if (!$('#edit_deadline_time').val()) {
         formData += '&deadline_time=23:59';
@@ -572,14 +605,18 @@ $('#confirmStatusChange').on('click', function() {
             if (response.success) {
                 showAlert('success', response.message);
                 
-                // Switch to the appropriate tab based on new status
+                // Switch to the appropriate tab based on new status - NEW 5-STAGE SYSTEM
                 let targetTab = 'all';
-                if (newStatus === 'Ongoing') {
-                    targetTab = 'ongoing';
-                } else if (newStatus === 'Completed') {
-                    targetTab = 'completed';
-                } else if (newStatus === 'Pending') {
-                    targetTab = 'pending';
+                if (newStatus === 'Doing') {
+                    targetTab = 'doing';
+                } else if (newStatus === 'Done') {
+                    targetTab = 'done';
+                } else if (newStatus === 'Past Due') {
+                    targetTab = 'pastdue';
+                } else if (newStatus === 'Dropped') {
+                    targetTab = 'dropped';
+                } else if (newStatus === 'To Do') {
+                    targetTab = 'todo';
                 }
                 
                 // Switch tab and reload
@@ -596,6 +633,49 @@ $('#confirmStatusChange').on('click', function() {
     });
     
     pendingStatusChange = null;
+});
+
+// Drop Task Modal Function - NEW 5-STAGE SYSTEM
+function promptDropTask(taskId, taskTitle) {
+    pendingDropTask = taskId;
+    $('#dropTaskTitle').html('<strong>' + taskTitle + '</strong>');
+    $('#dropTaskModal').modal('show');
+}
+
+// Confirm Drop Task - NEW 5-STAGE SYSTEM
+$('#confirmDropTask').on('click', function() {
+    if (!pendingDropTask) return;
+    
+    $('#dropTaskModal').modal('hide');
+    
+    $.ajax({
+        url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
+        type: 'POST',
+        data: { 
+            action: 'change_status', 
+            todo_id: pendingDropTask, 
+            status: 'Dropped',
+            csrf_token: '<?php echo getCsrfToken(); ?>'
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                showAlert('success', 'Task dropped successfully');
+                
+                // Switch to dropped tab
+                $('[data-filter="dropped"]').tab('show');
+                currentFilter = 'dropped';
+                loadTasks('dropped');
+            } else {
+                showAlert('danger', response.message || 'Error dropping task');
+            }
+        },
+        error: function(xhr) {
+            showAlert('danger', xhr.responseJSON?.message || 'Error dropping task');
+        }
+    });
+    
+    pendingDropTask = null;
 });
 
 function deleteTask(taskId, title) {
@@ -624,8 +704,9 @@ function deleteTask(taskId, title) {
     });
 }
 
+// NEW 5-STAGE SYSTEM Functions
 function canChangeStatus(task) {
-    return task.status !== 'Completed' && task.status !== 'Cancelled';
+    return task.status !== 'Done' && task.status !== 'Dropped';
 }
 
 function canEdit(task) {
@@ -638,20 +719,22 @@ function canDelete(task) {
 
 function getNextStatus(currentStatus) {
     const statusFlow = {
-        'Assigned': 'Ongoing',
-        'Ongoing': 'Completed',
-        'Pending': 'Ongoing'
+        'To Do': 'Doing',
+        'Doing': 'Done',
+        'Past Due': 'Doing'
     };
-    return statusFlow[currentStatus] || 'Completed';
+    return statusFlow[currentStatus] || 'Done';
 }
 
 function getStatusIcon(status) {
     const icons = {
-        'Ongoing': 'play-circle',
-        'Completed': 'check-circle',
-        'Cancelled': 'x-circle'
+        'To Do': 'circle',
+        'Doing': 'play-circle',
+        'Past Due': 'exclamation-triangle',
+        'Done': 'check-circle',
+        'Dropped': 'x-circle'
     };
-    return icons[status] || 'check';
+    return icons[status] || 'circle';
 }
 
 function formatDateTime(datetime) {

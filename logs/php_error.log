@@ -350,3 +350,43 @@
 [13-Nov-2025 16:07:29 Asia/Dhaka] PHP Stack trace:
 [13-Nov-2025 16:07:29 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\itam\pages\users\edit_user.php:0
 [13-Nov-2025 16:07:29 Asia/Dhaka] PHP   2. header($header = 'Location: view_user.php?id=5') C:\wamp64\www\it-claud\itam\pages\users\edit_user.php:130
+[13-Nov-2025 16:29:45 Asia/Dhaka] User operation error: Employee ID already exists in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 54
+[13-Nov-2025 16:29:52 Asia/Dhaka] User operation error: Username already exists in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 62
+[13-Nov-2025 18:42:25 Asia/Dhaka] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\wamp64\www\it-claud\itam\layouts\header.php:57) in C:\wamp64\www\it-claud\itam\pages\users\edit_user.php on line 130
+[13-Nov-2025 18:42:25 Asia/Dhaka] PHP Stack trace:
+[13-Nov-2025 18:42:25 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\itam\pages\users\edit_user.php:0
+[13-Nov-2025 18:42:25 Asia/Dhaka] PHP   2. header($header = 'Location: view_user.php?id=1') C:\wamp64\www\it-claud\itam\pages\users\edit_user.php:130
+[13-Nov-2025 18:42:28 Asia/Dhaka] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\wamp64\www\it-claud\itam\layouts\header.php:57) in C:\wamp64\www\it-claud\itam\pages\users\edit_user.php on line 130
+[13-Nov-2025 18:42:28 Asia/Dhaka] PHP Stack trace:
+[13-Nov-2025 18:42:28 Asia/Dhaka] PHP   1. {main}() C:\wamp64\www\it-claud\itam\pages\users\edit_user.php:0
+[13-Nov-2025 18:42:28 Asia/Dhaka] PHP   2. header($header = 'Location: view_user.php?id=1') C:\wamp64\www\it-claud\itam\pages\users\edit_user.php:130
+[13-Nov-2025 20:20:39 Asia/Dhaka] User operation error: Employee ID already exists in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 54
+[13-Nov-2025 20:20:45 Asia/Dhaka] User operation error: Employee ID already exists in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 54
+[14-Nov-2025 01:43:58 Asia/Dhaka] User operation error: User not found in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 197
+[14-Nov-2025 01:44:02 Asia/Dhaka] User operation error: User not found in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 197
+[14-Nov-2025 01:44:07 Asia/Dhaka] User operation error: User not found in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 197
+[14-Nov-2025 01:44:12 Asia/Dhaka] User operation error: User not found in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 197
+[14-Nov-2025 01:44:16 Asia/Dhaka] User operation error: User not found in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 197
+[14-Nov-2025 01:44:32 Asia/Dhaka] User operation error: User not found in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 197
+[14-Nov-2025 01:44:38 Asia/Dhaka] User operation error: User not found in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 197
+[14-Nov-2025 01:44:41 Asia/Dhaka] User operation error: User not found in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 197
+[14-Nov-2025 01:44:47 Asia/Dhaka] User operation error: User not found in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 197
+[14-Nov-2025 01:44:50 Asia/Dhaka] User operation error: User not found in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 197
+[14-Nov-2025 01:44:54 Asia/Dhaka] User operation error: User not found in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 197
+[14-Nov-2025 01:44:57 Asia/Dhaka] PHP Fatal error:  Uncaught Error: Undefined constant "PROFILE_UPLOAD_PATH" in C:\wamp64\www\it-claud\itam\ajax\user_operations.php:205
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 205
+[14-Nov-2025 01:44:59 Asia/Dhaka] PHP Fatal error:  Uncaught Error: Undefined constant "PROFILE_UPLOAD_PATH" in C:\wamp64\www\it-claud\itam\ajax\user_operations.php:205
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 205
+[14-Nov-2025 01:45:05 Asia/Dhaka] PHP Fatal error:  Uncaught Error: Undefined constant "PROFILE_UPLOAD_PATH" in C:\wamp64\www\it-claud\itam\ajax\user_operations.php:205
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 205
+[14-Nov-2025 01:45:22 Asia/Dhaka] PHP Fatal error:  Uncaught Error: Undefined constant "PROFILE_UPLOAD_PATH" in C:\wamp64\www\it-claud\itam\ajax\user_operations.php:205
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 205
+[14-Nov-2025 01:52:06 Asia/Dhaka] User operation error: User not found in C:\wamp64\www\it-claud\itam\ajax\user_operations.php on line 151

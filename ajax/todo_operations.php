@@ -1,7 +1,7 @@
 <?php
 // Folder: ajax/
 // File: todo_operations.php
-// Purpose: Handle todo/task CRUD operations - UPDATED VERSION
+// Purpose: Handle todo/task CRUD operations - 5 STAGE SYSTEM
 
 require_once '../config/config.php';
 require_once '../config/session.php';
@@ -22,34 +22,36 @@ try {
             $where = [];
             $params = [];
             
+            // NEW 5-STAGE SYSTEM
             switch ($filter) {
-                case 'assigned':
-                    // Tasks created by current user
-                    $where[] = "t.created_by = ?";
-                    $params[] = $userId;
+                case 'todo':
+                    // To Do tab - only To Do status
+                    $where[] = "t.status = 'To Do'";
                     break;
                     
-                case 'ongoing':
-                    // Tasks in Ongoing status
-                    $where[] = "t.status = 'Ongoing'";
+                case 'doing':
+                    // Doing tab - only Doing status
+                    $where[] = "t.status = 'Doing'";
                     break;
                     
-                case 'pending':
-                    // Tasks in Pending status OR overdue tasks (not completed/cancelled)
-                    $where[] = "(t.status = 'Pending' OR (CONCAT(t.deadline_date, ' ', t.deadline_time) < NOW() AND t.status NOT IN ('Completed', 'Cancelled')))";
+                case 'pastdue':
+                    // Past Due tab - Past Due status OR overdue tasks
+                    $where[] = "(t.status = 'Past Due' OR (CONCAT(t.deadline_date, ' ', t.deadline_time) < NOW() AND t.status NOT IN ('Done', 'Dropped')))";
                     break;
                     
-                case 'completed':
-                    $where[] = "t.status = 'Completed'";
+                case 'done':
+                    // Done tab - only Done status
+                    $where[] = "t.status = 'Done'";
                     break;
                     
-                case 'cancelled':
-                    $where[] = "t.status = 'Cancelled'";
+                case 'dropped':
+                    // Dropped tab - only Dropped status
+                    $where[] = "t.status = 'Dropped'";
                     break;
                     
                 default: // 'all'
-                    // Show all active tasks
-                    $where[] = "t.status NOT IN ('Completed', 'Cancelled')";
+                    // All tab - show all active tasks (not done/dropped)
+                    $where[] = "t.status NOT IN ('Done', 'Dropped')";
             }
             
             $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
@@ -93,7 +95,7 @@ try {
             $tags = sanitize($_POST['tags'] ?? '') ?: null;
             $priority = sanitize($_POST['priority'] ?? 'Medium');
             $deadlineDate = sanitize($_POST['deadline_date'] ?? '');
-            $deadlineTime = sanitize($_POST['deadline_time'] ?? '23:59:00'); // Default to end of day
+            $deadlineTime = sanitize($_POST['deadline_time'] ?? '23:59:00');
             $assignedUsers = $_POST['assigned_users'] ?? [];
             
             if (empty($title) || empty($deadlineDate)) {
@@ -113,10 +115,10 @@ try {
                 throw new Exception('Deadline must be in the future');
             }
             
-            // Insert todo
+            // Insert todo with default status 'To Do'
             $stmt = $pdo->prepare("
                 INSERT INTO todos (title, description, tags, priority, deadline_date, deadline_time, created_by, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'Assigned')
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'To Do')
             ");
             $stmt->execute([$title, $description, $tags, $priority, $deadlineDate, $deadlineTime, getCurrentUserId()]);
             $todoId = $pdo->lastInsertId();
@@ -213,7 +215,8 @@ try {
             $todoId = intval($_POST['todo_id'] ?? 0);
             $newStatus = sanitize($_POST['status'] ?? '');
             
-            $validStatuses = ['Assigned', 'Ongoing', 'Pending', 'Completed', 'Cancelled'];
+            // NEW 5-STAGE SYSTEM VALIDATION
+            $validStatuses = ['To Do', 'Doing', 'Past Due', 'Done', 'Dropped'];
             if (!in_array($newStatus, $validStatuses)) {
                 throw new Exception('Invalid status');
             }

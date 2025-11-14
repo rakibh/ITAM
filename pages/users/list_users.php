@@ -60,6 +60,38 @@ $users = $stmt->fetchAll();
 
 <?php require_once ROOT_PATH . 'layouts/sidebar.php'; ?>
 
+<style>
+    /* Ensure badges are visible */
+    .badge {
+        display: inline-block !important;
+        padding: 0.35em 0.65em !important;
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
+        line-height: 1 !important;
+        color: #fff !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        vertical-align: baseline !important;
+        border-radius: 0.25rem !important;
+    }
+    
+    .badge.bg-danger {
+        background-color: #dc3545 !important;
+    }
+    
+    .badge.bg-info {
+        background-color: #0dcaf0 !important;
+    }
+    
+    .badge.bg-success {
+        background-color: #198754 !important;
+    }
+    
+    .badge.bg-secondary {
+        background-color: #6c757d !important;
+    }
+</style>
+
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2"><i class="bi bi-people me-2"></i>User Management</h1>
@@ -145,14 +177,26 @@ $users = $stmt->fetchAll();
                                 <td><?php echo htmlspecialchars($user['username'] ?? 'N/A'); ?></td>
                                 <td><?php echo htmlspecialchars($user['email'] ?? 'N/A'); ?></td>
                                 <td>
-                                    <span class="badge <?php echo $user['role'] === 'admin' ? 'bg-danger' : 'bg-info'; ?>">
-                                        <?php echo ucfirst($user['role']); ?>
-                                    </span>
+                                    <?php 
+                                    // Ensure we're comparing exact string values
+                                    $userRole = trim(strtolower($user['role']));
+                                    if ($userRole === 'admin'): 
+                                    ?>
+                                        <span class="badge bg-danger">Admin</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-info">User</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
-                                    <span class="badge status-<?php echo strtolower($user['status']); ?>">
-                                        <?php echo $user['status']; ?>
-                                    </span>
+                                    <?php 
+                                    // Ensure we're comparing exact string values
+                                    $userStatus = trim($user['status']);
+                                    if ($userStatus === 'Active'): 
+                                    ?>
+                                        <span class="badge bg-success">Active</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td><?php echo formatDate($user['created_at']); ?></td>
                                 <td>

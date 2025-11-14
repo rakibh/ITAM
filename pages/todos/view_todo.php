@@ -1,7 +1,7 @@
 <?php
 // Folder: pages/todos/
 // File: view_todo.php
-// Purpose: View detailed task information - FIXED CSRF & Cancel Modal
+// Purpose: View detailed task information - 5 STAGE SYSTEM
 
 define('ROOT_PATH', dirname(dirname(__DIR__)) . '/');
 $pageTitle = 'View Task';
@@ -60,7 +60,7 @@ $comments = $stmt->fetchAll();
 // Check if deadline has passed
 $deadlineDateTime = new DateTime($task['deadline_date'] . ' ' . $task['deadline_time'], new DateTimeZone('Asia/Dhaka'));
 $now = new DateTime('now', new DateTimeZone('Asia/Dhaka'));
-$isOverdue = $deadlineDateTime < $now && $task['status'] !== 'Completed' && $task['status'] !== 'Cancelled';
+$isOverdue = $deadlineDateTime < $now && $task['status'] !== 'Done' && $task['status'] !== 'Dropped';
 
 // Check if current user can manage this task
 $canManage = ($task['created_by'] == getCurrentUserId() || isAdmin());
@@ -72,8 +72,8 @@ foreach ($assignedUsers as $user) {
     }
 }
 
-// Check if user can cancel
-$canCancel = $canManage && $task['status'] !== 'Completed' && $task['status'] !== 'Cancelled';
+// Check if user can drop (creator, admin, or assigned user) - NEW 5-STAGE SYSTEM
+$canDrop = ($canManage || $isAssigned) && $task['status'] !== 'Done' && $task['status'] !== 'Dropped';
 ?>
 
 <?php require_once ROOT_PATH . 'layouts/sidebar.php'; ?>
@@ -83,23 +83,23 @@ $canCancel = $canManage && $task['status'] !== 'Completed' && $task['status'] !=
         <h1 class="h2"><i class="bi bi-check2-square me-2"></i>Task Details</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
             <div class="btn-group me-2">
-                <?php if ($task['status'] !== 'Completed' && $task['status'] !== 'Cancelled' && ($canManage || $isAssigned)): ?>
-                    <?php if ($task['status'] === 'Assigned'): ?>
-                        <button type="button" class="btn btn-success" onclick="promptStatusChange('Ongoing')">
+                <?php if ($task['status'] !== 'Done' && $task['status'] !== 'Dropped' && ($canManage || $isAssigned)): ?>
+                    <?php if ($task['status'] === 'To Do'): ?>
+                        <button type="button" class="btn btn-success" onclick="promptStatusChange('Doing')">
                             <i class="bi bi-play-circle me-1"></i>Start Task
                         </button>
-                    <?php elseif ($task['status'] === 'Ongoing'): ?>
-                        <button type="button" class="btn btn-success" onclick="promptStatusChange('Completed')">
-                            <i class="bi bi-check-circle me-1"></i>Mark Complete
+                    <?php elseif ($task['status'] === 'Doing'): ?>
+                        <button type="button" class="btn btn-success" onclick="promptStatusChange('Done')">
+                            <i class="bi bi-check-circle me-1"></i>Mark Done
                         </button>
-                    <?php elseif ($task['status'] === 'Pending'): ?>
-                        <button type="button" class="btn btn-warning" onclick="promptStatusChange('Ongoing')">
+                    <?php elseif ($task['status'] === 'Past Due'): ?>
+                        <button type="button" class="btn btn-warning" onclick="promptStatusChange('Doing')">
                             <i class="bi bi-play-circle me-1"></i>Resume
                         </button>
                     <?php endif; ?>
-                    <?php if ($canCancel): ?>
-                        <button type="button" class="btn btn-danger" onclick="promptCancelTask()">
-                            <i class="bi bi-x-circle me-1"></i>Cancel Task
+                    <?php if ($canDrop): ?>
+                        <button type="button" class="btn btn-danger" onclick="promptDropTask()">
+                            <i class="bi bi-x-circle me-1"></i>Drop Task
                         </button>
                     <?php endif; ?>
                 <?php endif; ?>
@@ -119,7 +119,7 @@ $canCancel = $canManage && $task['status'] !== 'Completed' && $task['status'] !=
                 <div>
                     <h5 class="mb-2"><?php echo htmlspecialchars($task['title']); ?></h5>
                     <div>
-                        <span class="badge status-<?php echo strtolower($task['status']); ?> me-2">
+                        <span class="badge status-<?php echo strtolower(str_replace(' ', '-', $task['status'])); ?> me-2">
                             <?php echo $task['status']; ?>
                         </span>
                         <span class="badge priority-<?php echo strtolower($task['priority']); ?> me-2">
@@ -319,24 +319,24 @@ $canCancel = $canManage && $task['status'] !== 'Completed' && $task['status'] !=
     </div>
 </div>
 
-<!-- Cancel Task Confirmation Modal -->
-<div class="modal fade" id="cancelTaskModal" tabindex="-1">
+<!-- Drop Task Confirmation Modal - NEW 5-STAGE SYSTEM -->
+<div class="modal fade" id="dropTaskModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Cancel Task</h5>
+                <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Drop Task</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to <strong>cancel</strong> the task "<strong><?php echo htmlspecialchars($task['title']); ?></strong>"?</p>
+                <p>Are you sure you want to <strong>drop</strong> the task "<strong><?php echo htmlspecialchars($task['title']); ?></strong>"?</p>
                 <div class="alert alert-warning mb-0">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Warning:</strong> Cancelled tasks cannot be resumed.
+                    <strong>Warning:</strong> Dropped tasks cannot be resumed.
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep Task Active</button>
-                <button type="button" class="btn btn-danger" id="confirmCancelTask">Yes, Cancel Task</button>
+                <button type="button" class="btn btn-danger" id="confirmDropTask">Yes, Drop Task</button>
             </div>
         </div>
     </div>
@@ -345,7 +345,7 @@ $canCancel = $canManage && $task['status'] !== 'Completed' && $task['status'] !=
 <script>
 let pendingStatusChange = null;
 
-// Add comment
+// Add comment with CSRF token
 $('#addCommentForm').on('submit', function(e) {
     e.preventDefault();
     
@@ -371,14 +371,16 @@ $('#addCommentForm').on('submit', function(e) {
     });
 });
 
-// Status change with modal
+// Status change with modal - NEW 5-STAGE SYSTEM
 function promptStatusChange(newStatus) {
     pendingStatusChange = newStatus;
     
     let message = `Are you sure you want to change the status to <strong>${newStatus}</strong>?`;
     
-    if (newStatus === 'Completed') {
-        message = 'Mark this task as <strong>completed</strong>? Make sure all work is finished.';
+    if (newStatus === 'Done') {
+        message = 'Mark this task as <strong>done</strong>? Make sure all work is finished.';
+    } else if (newStatus === 'Doing') {
+        message = 'Start working on this task?';
     }
     
     $('#statusChangeMessage').html(message);
@@ -419,13 +421,13 @@ $('#confirmStatusChange').on('click', function() {
     pendingStatusChange = null;
 });
 
-// Cancel task with modal
-function promptCancelTask() {
-    $('#cancelTaskModal').modal('show');
+// Drop task with modal - NEW 5-STAGE SYSTEM
+function promptDropTask() {
+    $('#dropTaskModal').modal('show');
 }
 
-$('#confirmCancelTask').on('click', function() {
-    $('#cancelTaskModal').modal('hide');
+$('#confirmDropTask').on('click', function() {
+    $('#dropTaskModal').modal('hide');
     
     $.ajax({
         url: '<?php echo BASE_URL; ?>ajax/todo_operations.php',
@@ -433,7 +435,7 @@ $('#confirmCancelTask').on('click', function() {
         data: { 
             action: 'change_status', 
             todo_id: <?php echo $todoId; ?>, 
-            status: 'Cancelled',
+            status: 'Dropped',
             csrf_token: '<?php echo getCsrfToken(); ?>'
         },
         dataType: 'json',
@@ -443,13 +445,13 @@ $('#confirmCancelTask').on('click', function() {
         success: function(response) {
             hideLoading();
             if (response.success) {
-                showAlert('success', 'Task cancelled successfully');
+                showAlert('success', 'Task dropped successfully');
                 setTimeout(() => location.reload(), 1500);
             }
         },
         error: function(xhr) {
             hideLoading();
-            showAlert('danger', xhr.responseJSON?.message || 'Error cancelling task');
+            showAlert('danger', xhr.responseJSON?.message || 'Error dropping task');
         }
     });
 });

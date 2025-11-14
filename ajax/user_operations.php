@@ -35,8 +35,20 @@ try {
             $phone1 = sanitize($_POST['phone_1'] ?? '') ?: null;
             $phone2 = sanitize($_POST['phone_2'] ?? '') ?: null;
             $password = $_POST['password'] ?? '';
-            $role = sanitize($_POST['role'] ?? 'user');
-            $status = sanitize($_POST['status'] ?? 'Active');
+            
+            // IMPORTANT: Don't sanitize these - keep exact values from form
+            $role = $_POST['role'] ?? 'user'; // admin or user
+            $status = $_POST['status'] ?? 'Active'; // Active or Inactive
+            
+            // Validate role (must be exactly 'admin' or 'user')
+            if (!in_array($role, ['admin', 'user'])) {
+                $role = 'user';
+            }
+            
+            // Validate status (must be exactly 'Active' or 'Inactive')
+            if (!in_array($status, ['Active', 'Inactive'])) {
+                $status = 'Active';
+            }
             
             if (empty($firstName) || empty($employeeId) || empty($password)) {
                 throw new Exception('First Name, Employee ID, and Password are required');
